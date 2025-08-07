@@ -1402,6 +1402,21 @@
         });
 
         function initializeFromURL() {
+            // Handle GitHub Pages redirect
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirectPath = urlParams.get('redirect');
+            
+            let pathname = window.location.pathname;
+            let search = window.location.search;
+            
+            if (redirectPath) {
+                pathname = redirectPath;
+                urlParams.delete('redirect');
+                search = urlParams.toString() ? '?' + urlParams.toString() : '';
+                
+                // Clean up the URL
+                window.history.replaceState(null, '', pathname + search);
+            }
             const currentState = parseURL(window.location.pathname, window.location.search);
             urlState = currentState;
             

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script>
+        // GitHub Pages SPA redirect
+        const path = window.location.pathname.replace('/tabiya-taxonomy-explorer', '');
+        const search = window.location.search;
+        
+        const newUrl = '/tabiya-taxonomy-explorer/?' + 
+                      'redirect=' + encodeURIComponent(path) + 
+                      (search ? '&' + search.slice(1) : '');
+        
+        window.location.replace(newUrl);
+    </script>
+</head>
+<body><p>Redirecting...</p></body>
+</html>
