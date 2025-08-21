@@ -954,6 +954,72 @@
             text-decoration: none;
         }
 
+        /* Signalling Value Category Styling */
+        .signalling-category-high {
+            border-left: 4px solid #2563eb;
+            background: linear-gradient(90deg, rgba(37, 99, 235, 0.05) 0%, transparent 100%);
+            padding-left: 16px;
+            margin-bottom: 24px;
+        }
+
+        .signalling-category-medium {
+            border-left: 4px solid #059669;
+            background: linear-gradient(90deg, rgba(5, 150, 105, 0.05) 0%, transparent 100%);
+            padding-left: 16px;
+            margin-bottom: 24px;
+        }
+
+        .signalling-category-low {
+            border-left: 4px solid #7c7c7c;
+            background: linear-gradient(90deg, rgba(124, 124, 124, 0.05) 0%, transparent 100%);
+            padding-left: 16px;
+            margin-bottom: 24px;
+        }
+
+        .signalling-category-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .signalling-category-description {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-bottom: 12px;
+            font-style: italic;
+        }
+
+        /* Enhanced skill links for signalling categories */
+        .signalling-category-high .skill-link {
+            border: 1px solid rgba(37, 99, 235, 0.2);
+        }
+
+        .signalling-category-high .skill-link:hover {
+            background: rgba(37, 99, 235, 0.1);
+            border-color: #2563eb;
+        }
+
+        .signalling-category-medium .skill-link {
+            border: 1px solid rgba(5, 150, 105, 0.2);
+        }
+
+        .signalling-category-medium .skill-link:hover {
+            background: rgba(5, 150, 105, 0.1);
+            border-color: #059669;
+        }
+
+        .signalling-category-low .skill-link {
+            border: 1px solid rgba(124, 124, 124, 0.2);
+        }
+
+        .signalling-category-low .skill-link:hover {
+            background: rgba(124, 124, 124, 0.1);
+            border-color: #7c7c7c;
+        }
+
         /* Related Items */
         .related-section {
             margin-top: 32px;
@@ -1239,7 +1305,7 @@
 </head>
 <body>
     <!-- Debug indicator -->
-    <div class="debug-info" id="debugInfo">Navigation Fixes Applied ✅</div>
+    <div class="debug-info" id="debugInfo">Navigation Fixes Applied</div>
 
     <!-- Header -->
     <div class="header">
@@ -1593,7 +1659,6 @@
                 }
             });
 
-            console.log(`🌍 UI updated to ${currentLanguage.toUpperCase()}`);
         }
 
         function getTranslation(key) {
@@ -1614,7 +1679,7 @@
         async function switchLanguage(lang) {
             if (lang === currentLanguage) return;
             updateURL({ lang: lang });
-            console.log(`🌍 Switching language from ${currentLanguage} to ${lang}`);
+            console.log(`Switching language from ${currentLanguage} to ${lang}`);
             
             currentLanguage = lang;
             
@@ -1627,7 +1692,6 @@
             
             // If switching away from English, reset to global
             if (lang !== 'en' && currentLocalization) {
-                console.log(`🌍 Switching away from English, resetting to Global localization`);
                 currentLocalization = null;
                 document.querySelectorAll('.loc-btn').forEach(btn => btn.classList.remove('active'));
                 document.getElementById('loc-base').classList.add('active');
@@ -1668,10 +1732,10 @@
                 updateSearchStats();
                 updateTabBadges();
                 
-                console.log(`✅ Language switched to ${lang.toUpperCase()}`);
+                console.log(`Language switched to ${lang.toUpperCase()}`);
                 
                 // Update debug info
-                document.getElementById('debugInfo').textContent = `Language: ${lang.toUpperCase()} ✅`;
+                document.getElementById('debugInfo').textContent = `Language: ${lang.toUpperCase()}`;
                 
             } catch (error) {
                 console.error("❌ Error switching language:", error);
@@ -1701,7 +1765,7 @@
         async function switchLocalization(localization) {
             if (localization === currentLocalization) return;
             updateURL({ localization: localization || 'base' });
-            console.log(`🌍 Switching localization from ${currentLocalization || 'base'} to ${localization || 'base'}`);
+            console.log(`Switching localization from ${currentLocalization || 'base'} to ${localization || 'base'}`);
             
             currentLocalization = localization;
             
@@ -1724,7 +1788,7 @@
                 // Reload data with new localization
                 await loadTaxonomyData();
                 
-                console.log(`✅ Localization switched to ${localization || 'Base'}`);
+                console.log(`Localization switched to ${localization || 'Base'}`);
                 
                 // Update debug info
                 document.getElementById('debugInfo').textContent = `${localization || 'Base'} + ${currentLanguage.toUpperCase()} ✅`;
@@ -2126,7 +2190,8 @@
                         skillId: rel.SKILLID.toString().trim(),
                         relationType: rel.RELATIONTYPE || 'related',
                         signallingValue: rel.SIGNALLINGVALUE || 0,
-                        signallingValueLabel: rel.SIGNALLINGVALUELABEL || ''
+                        signallingValueLabel: rel.SIGNALLINGVALUELABEL || '',
+                        occupationType: rel.OCCUPATIONTYPE || ''
                     }));
 
                 // Create ID-to-Code mapping for lookups
@@ -2266,7 +2331,6 @@
                     
                     dataPath = `https://raw.githubusercontent.com/tabiya-tech/taxonomy-model-application/main/data-sets/csv/${encodeURIComponent(datasetFolder)}`;
                     useRemoteData = true;
-                    console.log(`📂 Loading English data from remote: ${dataPath}`);
                 }
                 
                 // Load the data
@@ -2277,7 +2341,6 @@
                     try {
                         const latestVersions = await detectLatestDatasetVersions();
                         const baseDataPath = `https://raw.githubusercontent.com/tabiya-tech/taxonomy-model-application/main/data-sets/csv/${encodeURIComponent(latestVersions.base)}`;
-                        console.log(`📂 Loading base English data for comparison: ${baseDataPath}`);
                         
                         const baseEnglishData = await loadDataFromPath(baseDataPath);
                         markLocalizationDifferences(baseEnglishData, baseData);
@@ -2307,7 +2370,6 @@
                     };
                 }
                 
-                console.log(`✅ Successfully loaded ${currentLanguage.toUpperCase()} taxonomy data`);
                 
             } catch (error) {
                 console.error("❌ Failed to load taxonomy data:", error);
@@ -2906,7 +2968,8 @@
                     skillId: rel.SKILLID.toString().trim(),
                     relationType: rel.RELATIONTYPE || 'related',
                     signallingValue: rel.SIGNALLINGVALUE || 0,
-                    signallingValueLabel: rel.SIGNALLINGVALUELABEL || ''
+                    signallingValueLabel: rel.SIGNALLINGVALUELABEL || '',
+                    occupationType: rel.OCCUPATIONTYPE || ''
                 }));
 
             // Create ID-to-Code mappings
@@ -4619,7 +4682,7 @@
             return html;
         }
 
-        // Enhanced occupation skills rendering with Skills Master lookup
+        // Enhanced occupation skills rendering with Skills Master lookup and signalling values for unseen occupations
         function renderOccupationSkills(occupation) {
             // Use ID for relations lookup, not code
             const occupationId = taxonomyData.occupationCodeToId[occupation.code] || occupation.id;
@@ -4644,36 +4707,93 @@
                 return skill ? { ...skill, relation: rel } : null;
             }).filter(Boolean);
 
-            // Group by relation type
-            const skillsByRelation = {};
-            skillsWithDetails.forEach(skill => {
-                const relationType = skill.relation.relationType || 'related';
-                if (!skillsByRelation[relationType]) {
-                    skillsByRelation[relationType] = [];
-                }
-                skillsByRelation[relationType].push(skill);
-            });
-
+            // Check if this is an unseen occupation (I-code) to determine grouping strategy
+            const isUnseenOccupation = occupation.code && occupation.code.startsWith('I');
+            
             let skillsHtml = '';
             
-            // Define order for relation types
-            const relationOrder = ['essential', 'optional', 'related', 'knowledge', 'skills'];
-            
-            // Process each relation type in order
-            relationOrder.forEach(relationType => {
-                if (skillsByRelation[relationType] && skillsByRelation[relationType].length > 0) {
-                    const skills = skillsByRelation[relationType];
-                    const relationLabel = formatRelationType(relationType);
-                    
-                    // Use skill ID for navigation and show proper labels
+            if (isUnseenOccupation) {
+                // For unseen occupations: Group by signalling value
+                const skillsBySignalling = {
+                    'high': [],
+                    'medium': [],
+                    'low': [],
+                    'unknown': []
+                };
+                
+                skillsWithDetails.forEach(skill => {
+                    const signallingLabel = skill.relation.signallingValueLabel;
+                    if (signallingLabel && typeof signallingLabel === 'string') {
+                        const labelLower = signallingLabel.toLowerCase();
+                        if (skillsBySignalling[labelLower]) {
+                            skillsBySignalling[labelLower].push(skill);
+                        } else {
+                            skillsBySignalling['unknown'].push(skill);
+                        }
+                    } else {
+                        skillsBySignalling['unknown'].push(skill);
+                    }
+                });
+                
+                // Define signalling categories with icons and descriptions
+                const signallingCategories = [
+                    {
+                        key: 'high',
+                        label: 'High Signalling Value Skills',
+                        description: 'Skills that strongly signal competence and capability',
+                        color: '#2563eb' // Blue
+                    },
+                    {
+                        key: 'medium', 
+                        label: 'Medium Signalling Value Skills',
+                        description: 'Skills that moderately signal competence',
+                        color: '#059669' // Green
+                    },
+                    {
+                        key: 'low',
+                        label: 'Low Signalling Value Skills', 
+                        description: 'Skills that provide basic signalling of competence',
+                        color: '#7c7c7c' // Gray
+                    }
+                ];
+                
+                // Render each signalling category
+                signallingCategories.forEach(category => {
+                    if (skillsBySignalling[category.key] && skillsBySignalling[category.key].length > 0) {
+                        const skills = skillsBySignalling[category.key];
+                        
+                        const skillLinks = skills.map(skill => 
+                            `<a href="javascript:void(0)" class="skill-link" onclick="selectItem('${skill.id}', '${skill.type}', event)">${skill.label}</a>`
+                        ).join(', ');
+                        
+                        skillsHtml += `
+                            <div class="signalling-category-${category.key}">
+                                <div class="signalling-category-title" style="color: ${category.color};">
+                                    <i class="fas ${category.icon}" style="font-size: 14px;"></i>
+                                    ${category.label} (${skills.length})
+                                </div>
+                                <div class="signalling-category-description">
+                                    ${category.description}
+                                </div>
+                                <div class="skills-inline">
+                                    ${skillLinks}
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                
+                // Handle any unknown/unclassified skills
+                if (skillsBySignalling['unknown'].length > 0) {
+                    const skills = skillsBySignalling['unknown'];
                     const skillLinks = skills.map(skill => 
                         `<a href="javascript:void(0)" class="skill-link" onclick="selectItem('${skill.id}', '${skill.type}', event)">${skill.label}</a>`
                     ).join(', ');
                     
                     skillsHtml += `
                         <div style="margin-bottom: 20px;">
-                            <h5 style="color: var(--oxford-blue); margin-bottom: 12px; font-size: 16px; font-weight: 600;">
-                                ${relationLabel} (${skills.length})
+                            <h5 style="color: var(--text-secondary); margin-bottom: 12px; font-size: 16px; font-weight: 600;">
+                                Other Skills (${skills.length})
                             </h5>
                             <div class="skills-inline">
                                 ${skillLinks}
@@ -4681,34 +4801,76 @@
                         </div>
                     `;
                 }
-            });
-            
-            // Process any remaining relation types not in the predefined order
-            Object.keys(skillsByRelation).forEach(relationType => {
-                if (!relationOrder.includes(relationType)) {
-                    const skills = skillsByRelation[relationType];
-                    const relationLabel = formatRelationType(relationType);
-                    
-                    const skillLinks = skills.map(skill => 
-                        `<a href="javascript:void(0)" class="skill-link" onclick="selectItem('${skill.id}', '${skill.type}', event)">${skill.label}</a>`
-                    ).join(', ');
-                    
-                    skillsHtml += `
-                        <div style="margin-bottom: 20px;">
-                            <h5 style="color: var(--oxford-blue); margin-bottom: 12px; font-size: 16px; font-weight: 600;">
-                                ${relationLabel} (${skills.length})
-                            </h5>
-                            <div class="skills-inline">
-                                ${skillLinks}
+                
+            } else {
+                // For seen occupations: Use existing relation type grouping
+                const skillsByRelation = {};
+                skillsWithDetails.forEach(skill => {
+                    const relationType = skill.relation.relationType || 'related';
+                    if (!skillsByRelation[relationType]) {
+                        skillsByRelation[relationType] = [];
+                    }
+                    skillsByRelation[relationType].push(skill);
+                });
+                
+                // Define order for relation types
+                const relationOrder = ['essential', 'optional', 'related', 'knowledge', 'skills'];
+                
+                // Process each relation type in order
+                relationOrder.forEach(relationType => {
+                    if (skillsByRelation[relationType] && skillsByRelation[relationType].length > 0) {
+                        const skills = skillsByRelation[relationType];
+                        const relationLabel = formatRelationType(relationType);
+                        
+                        // Use skill ID for navigation and show proper labels
+                        const skillLinks = skills.map(skill => 
+                            `<a href="javascript:void(0)" class="skill-link" onclick="selectItem('${skill.id}', '${skill.type}', event)">${skill.label}</a>`
+                        ).join(', ');
+                        
+                        skillsHtml += `
+                            <div style="margin-bottom: 20px;">
+                                <h5 style="color: var(--oxford-blue); margin-bottom: 12px; font-size: 16px; font-weight: 600;">
+                                    ${relationLabel} (${skills.length})
+                                </h5>
+                                <div class="skills-inline">
+                                    ${skillLinks}
+                                </div>
                             </div>
-                        </div>
-                    `;
-                }
-            });
+                        `;
+                    }
+                });
+                
+                // Process any remaining relation types not in the predefined order
+                Object.keys(skillsByRelation).forEach(relationType => {
+                    if (!relationOrder.includes(relationType)) {
+                        const skills = skillsByRelation[relationType];
+                        const relationLabel = formatRelationType(relationType);
+                        
+                        const skillLinks = skills.map(skill => 
+                            `<a href="javascript:void(0)" class="skill-link" onclick="selectItem('${skill.id}', '${skill.type}', event)">${skill.label}</a>`
+                        ).join(', ');
+                        
+                        skillsHtml += `
+                            <div style="margin-bottom: 20px;">
+                                <h5 style="color: var(--oxford-blue); margin-bottom: 12px; font-size: 16px; font-weight: 600;">
+                                    ${relationLabel} (${skills.length})
+                                </h5>
+                                <div class="skills-inline">
+                                    ${skillLinks}
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+            }
 
+            // Create section title based on occupation type
+            const sectionTitle = isUnseenOccupation ? 'Skills by Signalling Value' : 'Required Skills';
+            const titleIcon = isUnseenOccupation ? 'fa-signal' : 'fa-tools';
+            
             return `
                 <div class="skills-section">
-                    <h4><i class="fas fa-tools"></i>Required Skills (${skillsWithDetails.length})</h4>
+                    <h4><i class="fas ${titleIcon}"></i>${sectionTitle} (${skillsWithDetails.length})</h4>
                     ${skillsHtml}
                 </div>
             `;
@@ -5021,12 +5183,10 @@
         });
 
         async function loadAppStateFromURL(state, isNavigating = false) {
-            console.log('🔄 Loading app state from URL:', state);
             
             try {
                 // Update language if different
                 if (state.lang !== currentLanguage) {
-                    console.log(`🌍 URL language change: ${currentLanguage} → ${state.lang}`);
                     currentLanguage = state.lang;
                     
                     // Update language buttons without triggering URL update
@@ -5039,7 +5199,6 @@
                 // Update localization if different  
                 const newLoc = state.localization === 'base' ? null : state.localization;
                 if (newLoc !== currentLocalization) {
-                    console.log(`🏠 URL localization change: ${currentLocalization} → ${newLoc}`);
                     currentLocalization = newLoc;
                     
                     // Update localization buttons without triggering URL update
@@ -5058,7 +5217,6 @@
                 
                 // Update taxonomy tab if different
                 if (state.taxonomy !== currentMainTab) {
-                    console.log(`📂 URL tab change: ${currentMainTab} → ${state.taxonomy}`);
                     currentMainTab = state.taxonomy;
                     
                     // Update tab UI without triggering URL update
