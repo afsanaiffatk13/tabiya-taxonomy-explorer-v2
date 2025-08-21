@@ -1389,7 +1389,11 @@
         let progressUI = null;
         let virtualScrollers = new Map();
         let isDataLoading = false;
-
+        
+        //Caching
+        let versionCache = null;
+        let versionCacheTime = 0;
+        const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
@@ -2228,32 +2232,54 @@
             console.log(`🚀 Loading ${currentLanguage.toUpperCase()} taxonomy data...`);
             
             try {
-                // Determine the correct data path based on language and localization
                 let dataPath;
+                let useRemoteData = false;
                 
-                // Get the base path for GitHub Pages deployment
-                const basePath = window.location.hostname === 'tabiya-tech.github.io' 
-                    ? '/tabiya-taxonomy-explorer' 
-                    : '';
-
-                if (currentLocalization === 'za' && currentLanguage === 'en') {
-                    // South African English
-                    dataPath = `${basePath}/data/localized/za/en`;
-                } else {
-                    // Base language data (en or es)
-                    dataPath = `${basePath}/data/base/${currentLanguage}`;
+                // Determine data source and path
+                if (currentLanguage === 'es') {
+                    // Spanish data - always use local files
+                    const basePath = window.location.hostname === 'tabiya-tech.github.io' 
+                        ? '/tabiya-taxonomy-explorer' 
+                        : '';
+                    dataPath = `${basePath}/data/base/es`;
+                    useRemoteData = false;
+                    console.log(`📍 Using local Spanish data: ${dataPath}`);
+                    
+                } else if (currentLanguage === 'en') {
+                    // English data - use remote repository
+                    const latestVersions = await detectLatestDatasetVersions();
+                    let datasetFolder;
+                    
+                    if (currentLocalization === 'za') {
+                        // South African English - use latest localized dataset
+                        datasetFolder = latestVersions.localized;
+                        console.log(`📍 Using South African dataset: ${datasetFolder}`);
+                    } else {
+                        // Base English - use latest base dataset
+                        datasetFolder = latestVersions.base;
+                        console.log(`📍 Using base English dataset: ${datasetFolder}`);
+                    }
+                    
+                    if (!datasetFolder) {
+                        throw new Error('No suitable English dataset version found');
+                    }
+                    
+                    dataPath = `https://raw.githubusercontent.com/tabiya-tech/taxonomy-model-application/main/data-sets/csv/${encodeURIComponent(datasetFolder)}`;
+                    useRemoteData = true;
+                    console.log(`📂 Loading English data from remote: ${dataPath}`);
                 }
-
                 
-                // Load the appropriate data
+                // Load the data
                 baseData = await loadDataFromPath(dataPath);
                 
-                // For localization, we need to also load base data for comparison
-                if (currentLocalization === 'za') {
+                // For South African localization, also load base English data for comparison
+                if (currentLocalization === 'za' && currentLanguage === 'en') {
                     try {
-                        const baseEnglishData = await loadDataFromPath(`${basePath}/data/base/en`);
+                        const latestVersions = await detectLatestDatasetVersions();
+                        const baseDataPath = `https://raw.githubusercontent.com/tabiya-tech/taxonomy-model-application/main/data-sets/csv/${encodeURIComponent(latestVersions.base)}`;
+                        console.log(`📂 Loading base English data for comparison: ${baseDataPath}`);
                         
-                        // Mark localization differences
+                        const baseEnglishData = await loadDataFromPath(baseDataPath);
                         markLocalizationDifferences(baseEnglishData, baseData);
                     } catch (locError) {
                         console.warn("⚠️ Could not load base English data for comparison:", locError);
@@ -2263,6 +2289,25 @@
                 // Set the global taxonomy data
                 taxonomyData = baseData;
                 
+                // Add dataset version info
+                if (useRemoteData) {
+                    const latestVersions = await detectLatestDatasetVersions();
+                    taxonomyData.datasetInfo = {
+                        version: currentLocalization === 'za' ? latestVersions.localizedVersion : latestVersions.baseVersion,
+                        source: `taxonomy-model-application (remote)`,
+                        type: currentLocalization === 'za' ? 'South African Localized' : 'Base English',
+                        loadMethod: 'Remote Repository'
+                    };
+                } else {
+                    taxonomyData.datasetInfo = {
+                        version: 'Local files',
+                        source: `Local data/base/${currentLanguage}`,
+                        type: 'Spanish Translation',
+                        loadMethod: 'Local Files'
+                    };
+                }
+                
+                console.log(`✅ Successfully loaded ${currentLanguage.toUpperCase()} taxonomy data`);
                 
             } catch (error) {
                 console.error("❌ Failed to load taxonomy data:", error);
@@ -2271,12 +2316,13 @@
                 if (currentMainTab !== 'about') {
                     const container = document.getElementById('treeContainer');
                     if (container) {
+                        const errorSource = currentLanguage === 'es' ? 'local Spanish files' : 'remote repository';
                         container.innerHTML = `
                             <div class="error-state" style="text-align: center; padding: 40px; color: var(--text-secondary);">
                                 <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #ffc107; margin-bottom: 16px;"></i>
                                 <h3>Failed to Load Data</h3>
                                 <p>Error: ${error.message}</p>
-                                <p style="font-size: 14px; margin-top: 12px;">Expected file structure: ./data/base/${currentLanguage}/*.csv</p>
+                                <p style="font-size: 14px;">Attempting to load ${currentLanguage.toUpperCase()} data from: ${errorSource}</p>
                                 <button onclick="loadTaxonomyData()" class="btn-control" style="margin-top: 20px;">
                                     <i class="fas fa-refresh"></i> Retry
                                 </button>
@@ -2305,6 +2351,91 @@
                     applyFontFixes();
                 }, 100);
             }
+        }
+
+        async function detectLatestDatasetVersions() {
+            const now = Date.now();
+    
+            // Return cached result if still valid
+            if (versionCache && (now - versionCacheTime) < CACHE_DURATION) {
+                console.log('📋 Using cached version information');
+                return versionCache;
+            }
+            const baseUrl = 'https://api.github.com/repos/tabiya-tech/taxonomy-model-application/contents/data-sets/csv';
+            
+            try {
+                console.log('🔍 Detecting latest dataset versions...');
+                const response = await fetch(baseUrl);
+                
+                if (!response.ok) {
+                    throw new Error(`GitHub API error: ${response.status}`);
+                }
+                
+                const folders = await response.json();
+                
+                // Filter and sort base datasets (tabiya-esco-1.1.1 v*)
+                const baseDatasets = folders
+                    .filter(item => item.type === 'dir' && item.name.startsWith('tabiya-esco-1.1.1 v'))
+                    .map(item => ({
+                        name: item.name,
+                        version: extractVersion(item.name, 'tabiya-esco-1.1.1 v')
+                    }))
+                    .sort((a, b) => compareVersions(b.version, a.version)); // Descending order
+                
+                // Filter and sort localized datasets (tabiya-sa v*)
+                const localizedDatasets = folders
+                    .filter(item => item.type === 'dir' && item.name.startsWith('tabiya-sa v'))
+                    .map(item => ({
+                        name: item.name,
+                        version: extractVersion(item.name, 'tabiya-sa v')
+                    }))
+                    .sort((a, b) => compareVersions(b.version, a.version)); // Descending order
+                
+                const latest = {
+                    base: baseDatasets[0]?.name || null,
+                    localized: localizedDatasets[0]?.name || null,
+                    baseVersion: baseDatasets[0]?.version || null,
+                    localizedVersion: localizedDatasets[0]?.version || null
+                };
+                
+
+                versionCache = latest;
+                versionCacheTime = now;
+
+                return latest;
+                
+            } catch (error) {
+                console.error('❌ Error detecting dataset versions:', error);
+                
+                // Fallback to known versions
+                return {
+                    base: 'tabiya-esco-1.1.1 v2.0.1',
+                    localized: 'tabiya-sa v1.0.1',
+                    baseVersion: '2.0.1',
+                    localizedVersion: '1.0.1'
+                };
+            }
+        }
+
+        // Extract version number from folder name
+        function extractVersion(folderName, prefix) {
+            return folderName.replace(prefix, '').trim();
+        }
+
+        // Compare semantic versions (e.g., "2.0.1" vs "1.0.0")
+        function compareVersions(a, b) {
+            const aParts = a.split('.').map(Number);
+            const bParts = b.split('.').map(Number);
+            
+            for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+                const aPart = aParts[i] || 0;
+                const bPart = bParts[i] || 0;
+                
+                if (aPart !== bPart) {
+                    return aPart - bPart;
+                }
+            }
+            return 0;
         }
 
 
