@@ -2022,24 +2022,6 @@
             console.log('✓ Semantic search enabled');
         }
 
-        // Initialize on page load (after taxonomy data loads)
-        window.addEventListener('load', () => {
-            // Wait for main taxonomy to load first
-            setTimeout(() => {
-                if (taxonomyData && taxonomyData.stats) {
-                    initializeSemanticSearch();
-                } else {
-                    // Retry after taxonomy loads
-                    const checkTaxonomy = setInterval(() => {
-                        if (taxonomyData && taxonomyData.stats) {
-                            clearInterval(checkTaxonomy);
-                            initializeSemanticSearch();
-                        }
-                    }, 500);
-                }
-            }, 1000);
-        });
-
         // ============================================
         // SEMANTIC SEARCH - UTILITY FUNCTIONS
         // ============================================
@@ -2122,27 +2104,26 @@
         });
 
         function initializeFromURL() {
-            // Handle GitHub Pages redirect
-            const urlParams = new URLSearchParams(window.location.search);
-            const redirectPath = urlParams.get('redirect');
-            
+            // Get current path and search params
             let pathname = window.location.pathname;
             let search = window.location.search;
             
-            if (redirectPath) {
-                pathname = redirectPath;
-                // Remove ALL redirect parameters (not just one)
-                const newParams = new URLSearchParams();
-                for (const [key, value] of urlParams.entries()) {
-                    if (key !== 'redirect') {
-                        newParams.append(key, value);
-                    }
-                }
-                search = newParams.toString() ? '?' + newParams.toString() : '';
+            // Clean up any redirect parameters from 404 handling
+            const urlParams = new URLSearchParams(search);
+            if (urlParams.has('redirect')) {
+                // Remove ALL redirect parameters
+                const redirectPath = urlParams.get('redirect');
+                urlParams.delete('redirect');
                 
-                // Clean up the URL
+                // Use the redirect path as the actual path
+                pathname = redirectPath;
+                search = urlParams.toString() ? '?' + urlParams.toString() : '';
+                
+                // Clean up URL immediately
                 window.history.replaceState(null, '', pathname + search);
             }
+            
+            // Parse the cleaned URL
             const currentState = parseURL(pathname, search);
             urlState = currentState;
             
@@ -2156,7 +2137,8 @@
             
             if (currentState.localization !== 'base') {
                 document.querySelectorAll('.loc-btn').forEach(btn => btn.classList.remove('active'));
-                document.getElementById(`loc-${currentState.localization}`).classList.add('active');
+                const locBtn = document.getElementById(`loc-${currentState.localization}`);
+                if (locBtn) locBtn.classList.add('active');
             }
             
             // Set taxonomy tab
@@ -2165,9 +2147,11 @@
                 document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
                 
                 if (currentState.taxonomy === 'occupations') {
-                    document.querySelector('.nav-tab:nth-child(2)').classList.add('active');
-                } else if (currentState.taxonomy === 'skills') {
                     document.querySelector('.nav-tab:nth-child(3)').classList.add('active');
+                } else if (currentState.taxonomy === 'skills') {
+                    document.querySelector('.nav-tab:nth-child(4)').classList.add('active');
+                } else if (currentState.taxonomy === 'explore') {
+                    document.querySelector('.nav-tab:nth-child(2)').classList.add('active');
                 }
             }
             
@@ -2176,8 +2160,11 @@
                 if (currentState.itemId) {
                     selectItemById(currentState.itemId);
                 } else if (currentState.searchQuery) {
-                    document.getElementById('searchBox').value = currentState.searchQuery;
-                    performSearch();
+                    const searchBox = document.getElementById('searchBox');
+                    if (searchBox) {
+                        searchBox.value = currentState.searchQuery;
+                        performSearch();
+                    }
                 }
             });
         }
@@ -3753,7 +3740,14 @@
                 showAboutPanel();
                 
             } else if (tab === 'explore') {
-                // Show Explore tab
+                // Lazy load semantic search on first visit
+                if (!semanticSearchReady && !window.semanticSearchInitializing) {
+                    window.semanticSearchInitializing = true;
+                    setTimeout(() => {
+                        initializeSemanticSearch();
+                    }, 100);
+                }
+    // Show Explore tab
                 showExplorePanel();
                 
             } else if (tab === 'occupations') {
@@ -5880,67 +5874,67 @@
             
             console.log(`🔄 Navigating from Explore to ${type} ${codeOrId}`);
             
-            // Store the item we want to select
-            let itemToSelect = null;
+            // Find the item
+            let item = null;
             let targetCode = codeOrId;
             
-            // Determine which main tab to switch to
-            let targetTab = 'occupations';
-            let targetSubTab = 'seen-occupations';
-            
             if (type === 'skill' || type === 'skillgroup') {
-                targetTab = 'skills';
-                // For skills, codeOrId is actually the ID
-                itemToSelect = taxonomyData.skillsMaster[codeOrId];
-                if (!itemToSelect) {
+                item = taxonomyData.skillsMaster[codeOrId];
+                if (!item) {
                     console.error(`❌ Could not find skill with ID: ${codeOrId}`);
                     return;
                 }
-                targetCode = codeOrId; // Skills use ID as code
-                
+                targetCode = codeOrId;
             } else if (type === 'occupation' || type === 'group') {
-                targetTab = 'occupations';
-                
-                // Find the item
                 if (type === 'occupation') {
-                    itemToSelect = taxonomyData.occupations.find(o => o.code === codeOrId || o.id === codeOrId);
+                    item = taxonomyData.occupations.find(o => o.code === codeOrId || o.id === codeOrId);
                 } else {
-                    itemToSelect = taxonomyData.groups.find(g => g.code === codeOrId || g.id === codeOrId);
+                    item = taxonomyData.groups.find(g => g.code === codeOrId || g.id === codeOrId);
                 }
                 
-                if (!itemToSelect) {
+                if (!item) {
                     console.error(`❌ Could not find ${type} with code/id: ${codeOrId}`);
                     return;
                 }
-                
-                targetCode = itemToSelect.code;
-                
-                // Determine if it's seen or unseen
-                if (itemToSelect.type === 'unseen') {
+                targetCode = item.code;
+            }
+            
+            // Determine target tabs
+            let targetMainTab = (type === 'skill' || type === 'skillgroup') ? 'skills' : 'occupations';
+            let targetSubTab = 'seen-occupations';
+            
+            if (type === 'occupation' || type === 'group') {
+                if (item.type === 'unseen') {
                     targetSubTab = 'unseen-occupations';
                 }
             }
             
-            console.log(`✓ Found item: ${itemToSelect.label}, navigating to ${targetTab}/${targetSubTab}`);
+            console.log(`✓ Navigating to ${targetMainTab}/${targetSubTab}`);
             
-            // Switch to the appropriate tab
-            currentMainTab = targetTab;
+            // Update state
+            currentMainTab = targetMainTab;
             currentSubTab = targetSubTab;
+            selectedItem = { ...item, type };
             
-            // Update tab UI
+            // Update URL
+            updateURL({ 
+                taxonomy: targetMainTab,
+                itemId: item.id || targetCode
+            });
+            
+            // Update tab UI - FIXED: Correct tab indices
             document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-            if (targetTab === 'skills') {
-                document.querySelector('.nav-tab:nth-child(4)').classList.add('active'); // Skills is 4th tab
-            } else {
-                document.querySelector('.nav-tab:nth-child(3)').classList.add('active'); // Occupations is 3rd tab
+            if (targetMainTab === 'skills') {
+                document.querySelector('.nav-tab:nth-child(4)').classList.add('active');
+            } else if (targetMainTab === 'occupations') {
+                document.querySelector('.nav-tab:nth-child(3)').classList.add('active');
             }
             
             // Show appropriate subtabs
             document.querySelectorAll('.sub-nav-tabs').forEach(subtab => subtab.classList.remove('active'));
-            if (targetTab === 'occupations') {
+            if (targetMainTab === 'occupations') {
                 document.getElementById('occupations-subtabs').classList.add('active');
                 
-                // Update subtab UI
                 document.querySelectorAll('.sub-nav-tab').forEach(t => t.classList.remove('active'));
                 if (targetSubTab === 'unseen-occupations') {
                     document.querySelector('.sub-nav-tab:nth-child(2)').classList.add('active');
@@ -5949,48 +5943,19 @@
                 }
             }
             
-            // Show explorer panel (hide Explore tab)
+            // Switch to explorer panel (hide Explore tab)
             showExplorerPanel();
             
-            // Render the appropriate tree and select the item
+            // Render detail panel immediately (don't wait for tree)
+            renderDetailPanel(selectedItem);
+            
+            // Render tree in background (but don't try to select/expand - user can navigate manually if needed)
             setTimeout(async () => {
-                if (targetTab === 'skills') {
+                if (targetMainTab === 'skills') {
                     await renderSkillsTreeOptimized();
                 } else {
                     await renderTaxonomyTreeOptimized();
                 }
-                
-                // Wait for tree to fully render, then select the item
-                setTimeout(() => {
-                    console.log(`🎯 Attempting to select: ${type} ${targetCode}`);
-                    
-                    // Clear previous selections
-                    document.querySelectorAll('.tree-node').forEach(node => node.classList.remove('selected'));
-                    
-                    // Find the node in the tree
-                    const nodeElement = document.querySelector(`[data-code="${targetCode}"]`);
-                    
-                    if (nodeElement) {
-                        console.log(`✓ Found node element, selecting`);
-                        nodeElement.classList.add('selected');
-                        
-                        // Expand parent nodes if needed
-                        expandAndScrollToItem(nodeElement, targetCode, type);
-                        
-                        // Render detail panel
-                        selectedItem = { ...itemToSelect, type };
-                        renderDetailPanel(selectedItem);
-                        
-                        // Scroll into view
-                        nodeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    } else {
-                        console.warn(`⚠️ Could not find node element for ${type}: ${targetCode}`);
-                        // Still show the detail panel even if we can't find the node
-                        selectedItem = { ...itemToSelect, type };
-                        renderDetailPanel(selectedItem);
-                    }
-                }, 300); // Increased timeout to ensure tree is fully rendered
-                
             }, 100);
         }
 
