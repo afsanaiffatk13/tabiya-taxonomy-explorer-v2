@@ -3,15 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <script>
-        // GitHub Pages SPA redirect
-        const path = window.location.pathname.replace('/tabiya-taxonomy-explorer', '');
-        const search = window.location.search;
+        // GitHub Pages SPA redirect for custom domain
+        const path = window.location.pathname;
         
-        const newUrl = '/tabiya-taxonomy-explorer/?' + 
-                      'redirect=' + encodeURIComponent(path) + 
-                      (search ? '&' + search.slice(1) : '');
+        // For custom domain (explorer.tabiya.org), redirect without base path
+        // For GitHub Pages (tabiya-tech.github.io), include base path
+        const isCustomDomain = window.location.hostname !== 'tabiya-tech.github.io';
         
-        window.location.replace(newUrl);
+        if (isCustomDomain) {
+            // Custom domain: redirect to root with clean redirect parameter
+            const newUrl = '/?redirect=' + encodeURIComponent(path);
+            window.location.replace(newUrl);
+        } else {
+            // GitHub Pages: include repository name in path
+            const cleanPath = path.replace('/tabiya-taxonomy-explorer', '');
+            const newUrl = '/tabiya-taxonomy-explorer/?redirect=' + encodeURIComponent(cleanPath);
+            window.location.replace(newUrl);
+        }
     </script>
 </head>
 <body><p>Redirecting...</p></body>
