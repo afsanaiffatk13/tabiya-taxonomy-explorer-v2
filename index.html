@@ -1969,7 +1969,7 @@
                 // Step 2: Load pre-computed embeddings
                 messageEl.textContent = 'Loading taxonomy embeddings (5MB)...';
                 
-                const basePath = window.location.hostname === 'tabiya-tech.github.io' 
+                const basePath = window.location.pathname.startsWith('/tabiya-taxonomy-explorer') 
                     ? '/tabiya-taxonomy-explorer' 
                     : '';
                 
@@ -2965,7 +2965,7 @@
                 // Determine data source and path
                 if (currentLanguage === 'es') {
                     // Spanish data - always use local files
-                    const basePath = window.location.hostname === 'tabiya-tech.github.io' 
+                    const basePath = window.location.pathname.startsWith('/tabiya-taxonomy-explorer') 
                         ? '/tabiya-taxonomy-explorer' 
                         : '';
                     dataPath = `${basePath}/data/base/es`;
@@ -7111,7 +7111,7 @@
 
         function generateURL(state) {
             // Always include the base path for GitHub Pages
-            const basePath = window.location.hostname === 'tabiya-tech.github.io' 
+            const basePath = window.location.pathname.startsWith('/tabiya-taxonomy-explorer') 
                 ? '/tabiya-taxonomy-explorer' 
                 : '';
                 
