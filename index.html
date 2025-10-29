@@ -12,6 +12,14 @@
     <script src="virtual-scroller.js"></script>
     <script src="performance-manager.js"></script>
 
+    <!-- Transformers.js for semantic search -->
+    <script type="module">
+        import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+        window.transformersPipeline = pipeline;
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -1143,7 +1151,296 @@
             font-family: 'DM Mono', monospace;
             z-index: 1000;
         }
+        /* ========================================== */
+        /* SEMANTIC SEARCH STYLES */
+        /* ========================================== */
 
+        .semantic-search-wrapper {
+            position: relative;
+            margin-bottom: 12px;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 18px 50px 18px 24px; /* Extra right padding for clear button */
+            background: var(--white);
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            font-size: 16px;
+            font-family: var(--font-family-sans);
+            font-weight: var(--font-weight-normal);
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .search-box:disabled {
+            background: var(--bg-light);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: var(--tabiya-green);
+            box-shadow: 0 0 0 3px rgba(0, 255, 145, 0.15);
+            background: var(--white);
+        }
+
+        .clear-search-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+        }
+
+        .clear-search-btn:hover {
+            background: var(--bg-light);
+            color: var(--oxford-blue);
+        }
+
+        .search-suggestions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .suggestion-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: var(--font-weight-semibold);
+        }
+
+        .suggestion-chip {
+            background: var(--tabiya-light-green);
+            color: var(--oxford-blue);
+            border: 1px solid var(--tabiya-green);
+            padding: 6px 12px;
+            border-radius: var(--radius-pill);
+            font-size: 13px;
+            font-weight: var(--font-weight-medium);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .suggestion-chip:hover {
+            background: var(--tabiya-green);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 255, 145, 0.3);
+        }
+
+        /* Results Sections */
+        .semantic-search-results {
+            margin-top: 24px;
+        }
+
+        .results-section {
+            margin-bottom: 32px;
+        }
+
+        .results-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--border-light);
+        }
+
+        .results-header h4 {
+            color: var(--oxford-blue);
+            font-size: 20px;
+            font-weight: var(--font-weight-bold);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .result-count {
+            color: var(--text-muted);
+            font-weight: var(--font-weight-normal);
+            font-size: 16px;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        /* Result Cards */
+        .result-card {
+            background: var(--white);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .result-card:hover {
+            background: var(--tabiya-soft-green);
+            border-color: var(--tabiya-green);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 255, 145, 0.15);
+        }
+
+        .result-card.selected {
+            background: var(--oxford-blue);
+            color: white;
+            border-color: var(--oxford-blue);
+        }
+
+        .result-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .result-icon {
+            font-size: 20px;
+        }
+
+        .result-score {
+            background: var(--tabiya-green);
+            color: var(--oxford-blue);
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: var(--font-weight-bold);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .result-card.selected .result-score {
+            background: var(--tabiya-green);
+            color: var(--oxford-blue);
+        }
+
+        .result-title {
+            font-size: 16px;
+            font-weight: var(--font-weight-semibold);
+            color: var(--oxford-blue);
+            margin-bottom: 4px;
+            line-height: 1.3;
+        }
+
+        .result-card.selected .result-title {
+            color: white;
+        }
+
+        .result-code {
+            font-family: var(--font-family-mono);
+            font-size: 12px;
+            color: var(--tabiya-dark-green);
+            margin-bottom: 8px;
+            font-weight: var(--font-weight-semibold);
+        }
+
+        .result-card.selected .result-code {
+            color: var(--tabiya-green);
+        }
+
+        .result-preview {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .result-card.selected .result-preview {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Show More Button */
+        .show-more-btn {
+            background: transparent;
+            color: var(--oxford-blue);
+            border: 2px solid var(--oxford-blue);
+            padding: 12px 24px;
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: var(--font-weight-semibold);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 auto;
+        }
+
+        .show-more-btn:hover {
+            background: var(--oxford-blue);
+            color: white;
+        }
+
+        /* Empty State */
+        .empty-search-state {
+            text-align: center;
+            padding: 60px 32px;
+            color: var(--text-muted);
+        }
+
+        .empty-search-state i {
+            font-size: 48px;
+            color: var(--oxford-blue);
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-search-state h3 {
+            color: var(--oxford-blue);
+            margin-bottom: 12px;
+            font-size: 24px;
+        }
+
+        .empty-search-state p {
+            font-size: 16px;
+            margin: 0;
+        }
+
+
+        /* Loading State */
+        .search-loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        .search-loading i {
+            font-size: 32px;
+            color: var(--oxford-blue);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
         /* Enhanced Responsive Design */
         @media (max-width: 1024px) {
             .sidebar {
@@ -1300,6 +1597,110 @@
             -moz-osx-font-smoothing: grayscale;
         }
 
+        /* ========== EXPLORE TAB STYLES ========== */
+
+        /* Full-width search header */
+        .explore-search-header {
+            background: white;
+            padding: 24px 32px;
+            border-bottom: 2px solid var(--border-light);
+            margin-bottom: 0;
+        }
+
+        .explore-search-wrapper {
+            position: relative;
+            max-width: 1200px;
+            margin: 0 auto 16px;
+        }
+
+        .explore-search-box {
+            width: 100%;
+            padding: 16px 48px 16px 20px;
+            font-size: 16px;
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-md);
+            font-family: var(--font-family-sans);
+            transition: all 0.2s ease;
+            background: white;
+        }
+
+        .explore-search-box:focus {
+            outline: none;
+            border-color: var(--tabiya-green);
+            box-shadow: 0 0 0 3px rgba(0, 255, 145, 0.1);
+        }
+
+        .explore-search-box:disabled {
+            background: var(--bg-light);
+            cursor: not-allowed;
+        }
+
+        .explore-search-wrapper .clear-search-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .explore-search-suggestions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            max-width: 1200px;
+            margin: 0 auto 12px;
+        }
+
+        .explore-search-stats {
+            max-width: 1200px;
+            margin: 0 auto;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* Two-column layout for results + detail */
+        .explore-content-layout {
+            display: flex;
+            height: calc(100vh - 300px);
+            gap: 24px;
+            padding: 24px 32px;
+            background: var(--bg-light);
+        }
+
+        .explore-results-panel {
+            flex: 1;
+            min-width: 400px;
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            overflow-y: auto;
+            border: 1px solid var(--border-light);
+        }
+
+        .explore-detail-panel {
+            flex: 1;
+            min-width: 400px;
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            overflow-y: auto;
+            border: 1px solid var(--border-light);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .explore-content-layout {
+                flex-direction: column;
+                height: auto;
+            }
+            
+            .explore-results-panel,
+            .explore-detail-panel {
+                min-width: 100%;
+                height: 500px;
+            }
+        }
+
     </style>
 
 </head>
@@ -1332,6 +1733,16 @@
         </div>
     </div>
 
+    <div id="semanticSearchLoader" style="display: none; position: fixed; top: 0; left: 0; right: 0; background: var(--oxford-blue); color: white; padding: 12px; text-align: center; z-index: 10000;">
+        <div style="max-width: 600px; margin: 0 auto;">
+            <i class="fas fa-brain"></i> 
+            <span id="loaderMessage">Initializing AI search...</span>
+            <div style="margin-top: 8px; background: rgba(255,255,255,0.2); height: 4px; border-radius: 2px; overflow: hidden;">
+                <div id="loaderProgress" style="background: var(--tabiya-green); height: 100%; width: 0%; transition: width 0.3s;"></div>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <div class="main-content">
             <!-- Enhanced Navigation with Main tabs and Sub-tabs -->
@@ -1343,7 +1754,10 @@
                         <li class="nav-tab active" onclick="switchMainTab('about', this)">
                             <i class="fas fa-info-circle"></i> About
                         </li>
-                    <li class="nav-tab" onclick="switchMainTab('occupations', this)">
+                        <li class="nav-tab" onclick="switchMainTab('explore', this)">
+                            <i class="fas fa-search"></i> Explore
+                        </li>
+                        <li class="nav-tab" onclick="switchMainTab('occupations', this)">
                             <i class="fas fa-briefcase"></i> Occupations
                         </li>
                         <li class="nav-tab" onclick="switchMainTab('skills', this)">
@@ -1384,17 +1798,93 @@
                     <!-- Skills will only have one view, so no sub-tabs needed -->
                 </ul>
             </div>
-
+            <!-- Explore Tab Layout -->
+            <div id="exploreTabContent" style="display: none;">
+                <!-- Full-width search bar at top -->
+                <div class="explore-search-header">
+                    <div class="explore-search-wrapper">
+                        <input type="text" 
+                            class="explore-search-box" 
+                            id="exploreSearchBox" 
+                            placeholder="Search using AI (e.g., 'caring for elderly people')..." 
+                            autocomplete="off">
+                        <button class="clear-search-btn" 
+                                id="exploreSearchClearBtn" 
+                                style="display: none;"
+                                onclick="clearExploreSearch()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="explore-search-suggestions">
+                        <span class="suggestion-label">Try:</span>
+                        <button class="suggestion-chip" onclick="fillExploreSearchQuery('caring for elderly people')">caring for elderly people</button>
+                        <button class="suggestion-chip" onclick="fillExploreSearchQuery('Python programming')">Python programming</button>
+                        <button class="suggestion-chip" onclick="fillExploreSearchQuery('managing teams')">managing teams</button>
+                    </div>
+                    
+                    <div class="explore-search-stats" id="exploreSearchStats"></div>
+                </div>
+                
+                <!-- Two-column layout: Results panel + Detail panel -->
+                <div class="explore-content-layout">
+                    <!-- Left: Search Results Panel -->
+                    <div class="explore-results-panel">
+                        <div id="exploreSearchResults">
+                            <!-- Default empty state -->
+                            <div class="empty-search-state">
+                                <i class="fas fa-search"></i>
+                                <h3>Start exploring</h3>
+                                <p>Type a natural language query to find relevant occupations and skills using AI semantic search.</p>
+                            </div>
+                            
+                            <!-- Occupations Section (hidden initially) -->
+                            <div class="results-section" id="exploreOccupationsSection" style="display: none;">
+                                <div class="results-header">
+                                    <h4><i class="fas fa-briefcase"></i> Occupations <span id="exploreOccCount" class="result-count">(0)</span></h4>
+                                </div>
+                                <div id="exploreOccupationsResults" class="results-grid"></div>
+                                <button class="show-more-btn" id="exploreShowMoreOccupations" style="display: none;" onclick="showMoreOccupations()">
+                                    Show more occupations <i class="fas fa-chevron-down"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Skills Section (hidden initially) -->
+                            <div class="results-section" id="exploreSkillsSection" style="display: none;">
+                                <div class="results-header">
+                                    <h4><i class="fas fa-tools"></i> Skills <span id="exploreSkillCount" class="result-count">(0)</span></h4>
+                                </div>
+                                <div id="exploreSkillsResults" class="results-grid"></div>
+                                <button class="show-more-btn" id="exploreShowMoreSkills" style="display: none;" onclick="showMoreSkills()">
+                                    Show more skills <i class="fas fa-chevron-down"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- No Results Message -->
+                            <div id="exploreNoResults" class="empty-search-state" style="display: none;">
+                                <i class="fas fa-search"></i>
+                                <h3>No close matches found</h3>
+                                <p>Try different keywords or check your spelling</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right: Detail Panel -->
+                    <div class="explore-detail-panel">
+                        <div id="exploreDetailPanel">
+                            <div class="empty-state">
+                                <i class="fas fa-mouse-pointer"></i>
+                                <h3>Select a result to view details</h3>
+                                <p>Click on a search result to view detailed information about the occupation or skill.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <!-- Explorer Layout -->
             <div class="explorer-layout">
                 <!-- Sidebar -->
                 <div class="sidebar">
-                    <div class="search-section">
-                        <input type="text" class="search-box" id="searchBox" 
-                               placeholder="Search taxonomy..." autocomplete="off">
-                        <div class="search-stats" id="searchStats"></div>
-                    </div>
-
                     <div id="treeContainer" class="tree-container">
                         <div class="loading">
                             <i class="fas fa-spinner"></i>
@@ -1402,7 +1892,6 @@
                         </div>
                     </div>
                 </div>
-
                 <!-- Main Panel -->
                 <div class="main-panel">
                     <div id="detailPanel">
@@ -1447,7 +1936,168 @@
         let currentMainTab = 'about';
         let currentSubTab = 'seen-occupations';
         let selectedItem = null;
-        let searchTimeout = null;
+
+        // ============================================
+        // SEMANTIC SEARCH - INITIALIZATION
+        // ============================================
+
+        let semanticSearchReady = false;
+        let embeddingModel = null;
+        let embeddingData = null;
+        let embeddingCache = new Map();
+
+        async function initializeSemanticSearch() {
+            const loaderEl = document.getElementById('semanticSearchLoader');
+            const messageEl = document.getElementById('loaderMessage');
+            const progressEl = document.getElementById('loaderProgress');
+            
+            try {
+                loaderEl.style.display = 'block';
+                
+                // Step 1: Load embedding model
+                messageEl.textContent = 'Loading AI model (80MB, one-time download)...';
+                progressEl.style.width = '30%';
+                
+                embeddingModel = await window.transformersPipeline(
+                    'feature-extraction',
+                    'Xenova/all-MiniLM-L6-v2'
+                );
+                
+                console.log('✓ Embedding model loaded');
+                progressEl.style.width = '60%';
+                
+                // Step 2: Load pre-computed embeddings
+                messageEl.textContent = 'Loading taxonomy embeddings (5MB)...';
+                
+                const basePath = window.location.hostname === 'tabiya-tech.github.io' 
+                    ? '/tabiya-taxonomy-explorer' 
+                    : '';
+                
+                const response = await fetch(`${basePath}/data/embeddings.json.gz`);
+                if (!response.ok) {
+                    throw new Error(`Failed to load embeddings: ${response.status}`);
+                }
+
+                const arrayBuffer = await response.arrayBuffer();
+                const decompressed = pako.ungzip(new Uint8Array(arrayBuffer), { to: 'string' });
+                embeddingData = JSON.parse(decompressed);
+                
+                console.log('✓ Loaded embeddings:', {
+                    occupations: embeddingData.occupations.length,
+                    skills: embeddingData.skills.length,
+                    total: embeddingData.metadata.total_items
+                });
+                
+                progressEl.style.width = '100%';
+                messageEl.textContent = '✓ AI search ready!';
+                
+                semanticSearchReady = true;
+                
+                // Hide loader after brief success message
+                setTimeout(() => {
+                    loaderEl.style.display = 'none';
+                }, 1000);
+                
+                // Enable search box
+                enableSemanticSearch();
+                
+            } catch (error) {
+                console.error('Failed to initialize semantic search:', error);
+                messageEl.textContent = '⚠️ AI search unavailable, using basic search';
+                messageEl.style.color = '#ffc107';
+                
+                setTimeout(() => {
+                    loaderEl.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        function enableSemanticSearch() {
+            const exploreSearchBox = document.getElementById('exploreSearchBox');
+            if (exploreSearchBox) {
+                exploreSearchBox.placeholder = 'Search using AI (e.g., "caring for elderly people")...';
+                exploreSearchBox.disabled = false;
+            }
+            
+            console.log('✓ Semantic search enabled');
+        }
+
+        // Initialize on page load (after taxonomy data loads)
+        window.addEventListener('load', () => {
+            // Wait for main taxonomy to load first
+            setTimeout(() => {
+                if (taxonomyData && taxonomyData.stats) {
+                    initializeSemanticSearch();
+                } else {
+                    // Retry after taxonomy loads
+                    const checkTaxonomy = setInterval(() => {
+                        if (taxonomyData && taxonomyData.stats) {
+                            clearInterval(checkTaxonomy);
+                            initializeSemanticSearch();
+                        }
+                    }, 500);
+                }
+            }, 1000);
+        });
+
+        // ============================================
+        // SEMANTIC SEARCH - UTILITY FUNCTIONS
+        // ============================================
+
+        /**
+         * Calculate cosine similarity between two vectors
+         * Returns a value between -1 and 1 (1 = identical, 0 = orthogonal, -1 = opposite)
+         */
+        function cosineSimilarity(vecA, vecB) {
+            if (vecA.length !== vecB.length) {
+                throw new Error('Vectors must have same dimensions');
+            }
+            
+            let dotProduct = 0;
+            let normA = 0;
+            let normB = 0;
+            
+            for (let i = 0; i < vecA.length; i++) {
+                dotProduct += vecA[i] * vecB[i];
+                normA += vecA[i] * vecA[i];
+                normB += vecB[i] * vecB[i];
+            }
+            
+            // Prevent division by zero
+            if (normA === 0 || normB === 0) {
+                return 0;
+            }
+            
+            return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+        }
+
+        /**
+         * Embed a text query using the loaded model
+         */
+        async function embedQuery(text) {
+            if (!embeddingModel) {
+                throw new Error('Embedding model not loaded');
+            }
+            
+            // Check cache
+            if (embeddingCache.has(text)) {
+                return embeddingCache.get(text);
+            }
+            
+            // Generate embedding
+            const output = await embeddingModel(text, {
+                pooling: 'mean',
+                normalize: true
+            });
+            
+            // Convert to array
+            const embedding = Array.from(output.data);
+            
+            // Cache result
+            embeddingCache.set(text, embedding);
+            
+            return embedding;
+        }
 
         // Performance optimization instances
         let dataWorker = null;
@@ -1612,6 +2262,14 @@
             });
         }
 
+        // Set up event listener for Explore search box
+        window.addEventListener('load', () => {
+            const exploreSearchBox = document.getElementById('exploreSearchBox');
+            if (exploreSearchBox) {
+                exploreSearchBox.addEventListener('input', debounce(performSearch, 300));
+            }
+        });
+
         async function loadTranslations() {
             try {                
                 // Load both language files
@@ -1729,7 +2387,6 @@
                     await renderTaxonomyTreeOptimized();
                     showOccupationsOverview();
                 }
-                updateSearchStats();
                 updateTabBadges();
                 
                 console.log(`Language switched to ${lang.toUpperCase()}`);
@@ -2251,7 +2908,6 @@
 
                 // Render the taxonomy tree
                 showAboutPanel(); // Start with About tab active
-                updateSearchStats();
                 updateTabBadges();
 
             } catch (error) {
@@ -2405,7 +3061,6 @@
                     await renderTaxonomyTreeOptimized();
                     showOccupationsOverview();
                 }
-                updateSearchStats();
                 updateTabBadges();
 
                 // CRITICAL: Apply font corruption fixes after any tree rendering
@@ -3071,14 +3726,13 @@
             
         }
 
-        
-        // Enhanced tab switching with proper skills tree rendering
         function switchMainTab(tab, element) {
             updateURL({ 
                 taxonomy: tab,
                 itemId: null,  // Clear item selection when switching tabs
                 searchQuery: null // Clear search when switching tabs
             });
+            
             // Update main tab state FIRST
             currentMainTab = tab;
             
@@ -3091,6 +3745,11 @@
             
             if (tab === 'about') {
                 showAboutPanel();
+                
+            } else if (tab === 'explore') {
+                // Show Explore tab
+                showExplorePanel();
+                
             } else if (tab === 'occupations') {
                 // Show occupations subtabs
                 document.getElementById('occupations-subtabs').classList.add('active');
@@ -3154,6 +3813,8 @@
         }
 
         function showAboutPanel() {
+            // Hide Explore tab content
+            document.getElementById('exploreTabContent').style.display = 'none';
             // Hide the sidebar completely for About tab
             document.querySelector('.sidebar').style.display = 'none';
             
@@ -3287,6 +3948,19 @@
                 </div>
             `;
         }
+
+        function showExplorePanel() {
+            // Hide sidebar and traditional explorer layout
+            document.querySelector('.sidebar').style.display = 'none';
+            document.querySelector('.explorer-layout').style.display = 'none';
+            
+            // Show Explore tab content
+            document.getElementById('exploreTabContent').style.display = 'block';
+            
+            // Focus search box
+            document.getElementById('exploreSearchBox').focus();
+        }
+
         function showOccupationsOverview() {
             const detailPanel = document.getElementById('detailPanel');
             detailPanel.innerHTML = `
@@ -3425,6 +4099,8 @@
             document.querySelector('.explorer-layout').style.display = 'flex';
             document.querySelector('.main-panel').style.width = '';
             document.querySelector('.main-panel').style.maxWidth = '';
+            // Hide Explore tab content
+            document.getElementById('exploreTabContent').style.display = 'none';
         }
 
         // Optimized tree rendering with virtual scrolling
@@ -4934,50 +5610,548 @@
         }
 
         // Fixed search functionality with proper main thread fallback
-        async function performSearchOptimized() {
-            const query = document.getElementById('searchBox').value.trim();
-    
-            if (query) {
-                updateURL({ searchQuery: query, itemId: null });
-            } else {
-                updateURL({ searchQuery: null, itemId: null });
+        let searchTimeout = null;
+        let currentResults = {
+            occupations: [],
+            skills: []
+        };
+        let displayLimit = {
+            occupations: 5,
+            skills: 5
+        };
+
+        async function performSearch() {
+            // Only work on Explore tab
+            if (currentMainTab !== 'explore') return;
+            
+            const query = document.getElementById('exploreSearchBox').value.trim();
+            const clearBtn = document.getElementById('exploreSearchClearBtn');
+            
+            // Show/hide clear button
+            clearBtn.style.display = query ? 'flex' : 'none';
+            
+            // Clear previous timeout
+            clearTimeout(searchTimeout);
+            
+            // Show empty state if query is too short
+            if (query.length < 3) {
+                showExploreEmptyState();
+                updateExploreSearchStats();
+                return;
             }
             
-            // Show loading state
-            const container = document.getElementById('treeContainer');
-            container.innerHTML = `
-                <div class="loading" style="text-align: center; padding: 40px;">
-                    <i class="fas fa-search fa-spin" style="font-size: 2rem; color: var(--oxford-blue); margin-bottom: 16px;"></i>
-                    <div style="color: var(--text-muted);">Searching "${query}"...</div>
+            // Check if semantic search is ready
+            if (!semanticSearchReady) {
+                updateExploreSearchStats(null, null, query, 'Initializing AI search...');
+                return;
+            }
+            
+            // Debounce search
+            searchTimeout = setTimeout(async () => {
+                await performSemanticSearch(query);
+            }, 300);
+        }
+        async function performSemanticSearch(query) {
+            try {
+                // Show loading state
+                showSearchLoading();
+                
+                console.log('Embedding data structure:', {
+                    hasOccupations: !!embeddingData?.occupations,
+                    hasSkills: !!embeddingData?.skills,
+                    keys: Object.keys(embeddingData || {})
+                });
+                
+                // Embed the query
+                const queryEmbedding = await embedQuery(query);
+                
+                // Search occupations
+                const occupationResults = searchInCategory(
+                    queryEmbedding,
+                    embeddingData.occupations,
+                    0.5 // Minimum similarity threshold
+                );
+                
+                // Search skills
+                const skillResults = searchInCategory(
+                    queryEmbedding,
+                    embeddingData.skills,
+                    0.5
+                );
+                
+                // Store results
+                currentResults = {
+                    occupations: occupationResults,
+                    skills: skillResults
+                };
+                
+                // Reset display limits
+                displayLimit = {
+                    occupations: 5,
+                    skills: 5
+                };
+                
+                // Render results
+                renderSearchResults();
+                
+                // Update stats
+                updateExploreSearchStats(
+                    occupationResults.length + skillResults.length,
+                    embeddingData.metadata.total_items,
+                    query
+                );
+                
+            } catch (error) {
+                console.error('Search error:', error);
+                showSearchError(error.message);
+            }
+        }
+
+        function searchInCategory(queryEmbedding, items, minSimilarity) {
+            const results = [];
+            
+            for (const item of items) {
+                const similarity = cosineSimilarity(queryEmbedding, item.embedding);
+                
+                if (similarity >= minSimilarity) {
+                    results.push({
+                        ...item,
+                        similarity: similarity
+                    });
+                }
+            }
+            
+            // Sort by similarity (highest first)
+            results.sort((a, b) => b.similarity - a.similarity);
+            
+            return results;
+        }
+
+        function showSearchLoading() {
+            // Show loading in Explore results panel
+            const emptyState = document.querySelector('#exploreSearchResults .empty-search-state');
+            emptyState.style.display = 'none';
+            
+            document.getElementById('exploreOccupationsSection').style.display = 'block';
+            document.getElementById('exploreOccupationsResults').innerHTML = `
+                <div class="search-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <div>Searching...</div>
                 </div>
             `;
             
-            try {
-                // Use main thread search (web worker fallback removed for now)
-                const results = await searchMainThreadOptimized(query);
-                await renderSearchResultsOptimized(results, query);
-                updateSearchStats(results.length, getTabItemCount(), query);
+            document.getElementById('exploreSkillsSection').style.display = 'none';
+            document.getElementById('exploreNoResults').style.display = 'none';
+        }
+
+        function showSearchError(message) {
+            const emptyState = document.querySelector('#exploreSearchResults .empty-search-state');
+            emptyState.style.display = 'none';
+            
+            document.getElementById('exploreOccupationsSection').style.display = 'none';
+            document.getElementById('exploreSkillsSection').style.display = 'none';
+            
+            const noResults = document.getElementById('exploreNoResults');
+            noResults.style.display = 'block';
+            noResults.querySelector('h3').textContent = 'Search Error';
+            noResults.querySelector('p').textContent = message;
+        }
+        
+        function renderSearchResults() {
+            const emptyState = document.querySelector('#exploreSearchResults .empty-search-state');
+            const noResultsMsg = document.getElementById('exploreNoResults');
+            
+            // Hide empty state
+            emptyState.style.display = 'none';
+            
+            // Check if we have any results
+            const hasResults = currentResults.occupations.length > 0 || currentResults.skills.length > 0;
+            
+            if (!hasResults) {
+                noResultsMsg.style.display = 'block';
+                document.getElementById('exploreOccupationsSection').style.display = 'none';
+                document.getElementById('exploreSkillsSection').style.display = 'none';
+                return;
+            }
+            
+            noResultsMsg.style.display = 'none';
+            
+            // Render occupations
+            if (currentResults.occupations.length > 0) {
+                document.getElementById('exploreOccupationsSection').style.display = 'block';
+                renderResultCategory('occupations', currentResults.occupations);
+            } else {
+                document.getElementById('exploreOccupationsSection').style.display = 'none';
+            }
+            
+            // Render skills
+            if (currentResults.skills.length > 0) {
+                document.getElementById('exploreSkillsSection').style.display = 'block';
+                renderResultCategory('skills', currentResults.skills);
+            } else {
+                document.getElementById('exploreSkillsSection').style.display = 'none';
+            }
+        }
+
+        function renderResultCategory(category, results) {
+            const containerId = category === 'occupations' ? 'exploreOccupationsResults' : 'exploreSkillsResults';
+            const container = document.getElementById(containerId);
+            const countEl = document.getElementById(category === 'occupations' ? 'exploreOccCount' : 'exploreSkillCount');
+            const showMoreBtn = document.getElementById(category === 'occupations' ? 'exploreShowMoreOccupations' : 'exploreShowMoreSkills');
+            
+            // Update count
+            countEl.textContent = `(${results.length})`;
+            
+            // Get items to display
+            const limit = displayLimit[category];
+            const itemsToShow = results.slice(0, limit);
+            
+            // Render cards
+            container.innerHTML = itemsToShow.map(item => createResultCard(item)).join('');
+            
+            // Show/hide "Show more" button
+            if (results.length > limit) {
+                showMoreBtn.style.display = 'flex';
+                const remaining = results.length - limit;
+                showMoreBtn.innerHTML = `Show ${remaining} more ${category} <i class="fas fa-chevron-down"></i>`;
+            } else {
+                showMoreBtn.style.display = 'none';
+            }
+        }
+
+        function createResultCard(item) {
+            const icon = (item.type === 'occupation' || item.type === 'group') ? '👤' : '🔧';
+            const percentage = Math.round(item.similarity * 100);
+            const code = item.code ? `<div class="result-code">${item.code}</div>` : '';
+            const preview = item.description ? `<div class="result-preview">${item.description}</div>` : '';
+            
+            return `
+                <div class="result-card" 
+                    onclick="selectItemFromSearch('${item.id}', '${item.type}')"
+                    data-id="${item.id}">
+                    <div class="result-card-header">
+                        <span class="result-icon">${icon}</span>
+                        <span class="result-score">⭐ ${percentage}%</span>
+                    </div>
+                    <div class="result-title">${item.label}</div>
+                    ${code}
+                    ${preview}
+                </div>
+            `;
+        }
+
+        function selectItemFromSearch(id, type) {
+            // Find the item
+            let item = null;
+            
+            if (type === 'occupation') {
+                item = taxonomyData.occupations.find(o => o.id === id);
+            } else if (type === 'group') {
+                item = taxonomyData.groups.find(g => g.id === id);
+            } else if (type === 'skill' || type === 'skillgroup') {
+                item = taxonomyData.skillsMaster[id];
+            }
+            
+            if (item) {
+                selectedItem = { ...item, type };
+                // Render to Explore detail panel
+                renderDetailPanelInExplore(selectedItem);
+            }
+            
+            // Highlight selected card
+            document.querySelectorAll('.result-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            const clickedCard = document.querySelector(`.result-card[data-id="${id}"]`);
+            if (clickedCard) {
+                clickedCard.classList.add('selected');
+            }
+        }
+
+        function selectItemFromExplore(codeOrId, type, event) {
+            if (event) event.preventDefault();
+            
+            console.log(`🔄 Navigating from Explore to ${type} ${codeOrId}`);
+            
+            // Store the item we want to select
+            let itemToSelect = null;
+            let targetCode = codeOrId;
+            
+            // Determine which main tab to switch to
+            let targetTab = 'occupations';
+            let targetSubTab = 'seen-occupations';
+            
+            if (type === 'skill' || type === 'skillgroup') {
+                targetTab = 'skills';
+                // For skills, codeOrId is actually the ID
+                itemToSelect = taxonomyData.skillsMaster[codeOrId];
+                if (!itemToSelect) {
+                    console.error(`❌ Could not find skill with ID: ${codeOrId}`);
+                    return;
+                }
+                targetCode = codeOrId; // Skills use ID as code
                 
+            } else if (type === 'occupation' || type === 'group') {
+                targetTab = 'occupations';
+                
+                // Find the item
+                if (type === 'occupation') {
+                    itemToSelect = taxonomyData.occupations.find(o => o.code === codeOrId || o.id === codeOrId);
+                } else {
+                    itemToSelect = taxonomyData.groups.find(g => g.code === codeOrId || g.id === codeOrId);
+                }
+                
+                if (!itemToSelect) {
+                    console.error(`❌ Could not find ${type} with code/id: ${codeOrId}`);
+                    return;
+                }
+                
+                targetCode = itemToSelect.code;
+                
+                // Determine if it's seen or unseen
+                if (itemToSelect.type === 'unseen') {
+                    targetSubTab = 'unseen-occupations';
+                }
+            }
+            
+            console.log(`✓ Found item: ${itemToSelect.label}, navigating to ${targetTab}/${targetSubTab}`);
+            
+            // Switch to the appropriate tab
+            currentMainTab = targetTab;
+            currentSubTab = targetSubTab;
+            
+            // Update tab UI
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            if (targetTab === 'skills') {
+                document.querySelector('.nav-tab:nth-child(4)').classList.add('active'); // Skills is 4th tab
+            } else {
+                document.querySelector('.nav-tab:nth-child(3)').classList.add('active'); // Occupations is 3rd tab
+            }
+            
+            // Show appropriate subtabs
+            document.querySelectorAll('.sub-nav-tabs').forEach(subtab => subtab.classList.remove('active'));
+            if (targetTab === 'occupations') {
+                document.getElementById('occupations-subtabs').classList.add('active');
+                
+                // Update subtab UI
+                document.querySelectorAll('.sub-nav-tab').forEach(t => t.classList.remove('active'));
+                if (targetSubTab === 'unseen-occupations') {
+                    document.querySelector('.sub-nav-tab:nth-child(2)').classList.add('active');
+                } else {
+                    document.querySelector('.sub-nav-tab:nth-child(1)').classList.add('active');
+                }
+            }
+            
+            // Show explorer panel (hide Explore tab)
+            showExplorerPanel();
+            
+            // Render the appropriate tree and select the item
+            setTimeout(async () => {
+                if (targetTab === 'skills') {
+                    await renderSkillsTreeOptimized();
+                } else {
+                    await renderTaxonomyTreeOptimized();
+                }
+                
+                // Wait for tree to fully render, then select the item
+                setTimeout(() => {
+                    console.log(`🎯 Attempting to select: ${type} ${targetCode}`);
+                    
+                    // Clear previous selections
+                    document.querySelectorAll('.tree-node').forEach(node => node.classList.remove('selected'));
+                    
+                    // Find the node in the tree
+                    const nodeElement = document.querySelector(`[data-code="${targetCode}"]`);
+                    
+                    if (nodeElement) {
+                        console.log(`✓ Found node element, selecting`);
+                        nodeElement.classList.add('selected');
+                        
+                        // Expand parent nodes if needed
+                        expandAndScrollToItem(nodeElement, targetCode, type);
+                        
+                        // Render detail panel
+                        selectedItem = { ...itemToSelect, type };
+                        renderDetailPanel(selectedItem);
+                        
+                        // Scroll into view
+                        nodeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } else {
+                        console.warn(`⚠️ Could not find node element for ${type}: ${targetCode}`);
+                        // Still show the detail panel even if we can't find the node
+                        selectedItem = { ...itemToSelect, type };
+                        renderDetailPanel(selectedItem);
+                    }
+                }, 300); // Increased timeout to ensure tree is fully rendered
+                
+            }, 100);
+        }
+
+        function renderDetailPanelInExplore(item) {
+            const panel = document.getElementById('exploreDetailPanel');
+            
+            try {
+                const breadcrumb = generateBreadcrumb(item);
+                const codeSection = (item.type === 'skill') ? '' : `<div class="detail-code">${item.code || item.id}</div>`;
+                
+                // Alternative Labels Section
+                const altLabelsSection = item.altLabels ? (() => {
+                    let labelsToShow = item.altLabels;
+                    
+                    if (currentLocalization && item.localizationChanges && item.localizationChanges.altLabelsAdded) {
+                        const addedLabels = item.localizationChanges.altLabelsAdded.split(/[,\n]/).map(l => l.trim().toLowerCase());
+                        const allLabels = item.altLabels.split(/[,\n]/).map(l => l.trim());
+                        const baseLabels = allLabels.filter(label => !addedLabels.includes(label.toLowerCase()));
+                        labelsToShow = baseLabels.join(', ');
+                    }
+                    
+                    if (!labelsToShow.trim()) return '';
+                    
+                    return `
+                        <div class="alt-labels-section">
+                            <h4 style="color: var(--oxford-blue); margin-bottom: 12px; font-size: 18px; font-weight: var(--font-weight-bold);">Alternative Labels</h4>
+                            <div class="alt-labels-list">
+                                ${labelsToShow.split('\n').filter(label => label.trim()).map(label => label.trim()).join(', ')}
+                            </div>
+                        </div>
+                    `;
+                })() : '';
+                
+                const localizationInfo = renderLocalizationInfo(item);
+                
+                // Modified skills/occupations sections to use selectItemFromExplore
+                const skillsSection = (item.type === 'occupation') ? renderOccupationSkillsForExplore(item) : '';
+                const relatedSection = (item.type === 'skill' || item.type === 'skillgroup') ? 
+                    renderSkillOccupationsForExplore(item) : renderRelatedItemsForExplore(item);
+                
+                panel.innerHTML = `
+                    ${breadcrumb}
+                    <div class="detail-header">
+                        ${codeSection}
+                        <h2 class="detail-title">${item.label}</h2>
+                        <div class="detail-description">${item.description || 'No description available.'}</div>
+                    </div>
+                    ${altLabelsSection}
+                    ${localizationInfo}
+                    ${skillsSection}
+                    ${relatedSection}
+                `;
             } catch (error) {
-                console.error("Search error:", error);
-                container.innerHTML = `
+                console.error('Error rendering detail panel in Explore:', error);
+                panel.innerHTML = `
                     <div class="empty-state">
                         <i class="fas fa-exclamation-triangle"></i>
-                        <h3>Search Error</h3>
-                        <p>An error occurred while searching: ${error.message}</p>
-                        <button onclick="document.getElementById('searchBox').value = ''; performSearchOptimized();" class="btn-control" style="margin-top: 20px;">
-                            <i class="fas fa-times"></i> Clear Search
-                        </button>
+                        <h3>Display Error</h3>
+                        <p>Could not display details for this item.</p>
                     </div>
                 `;
             }
         }
 
-
-        // Update original function to call optimized version
-        function performSearch() {
-            performSearchOptimized();
+        function renderOccupationSkillsForExplore(occupation) {
+            const relations = taxonomyData.occupationToSkills.filter(rel => rel.occupationId === occupation.id);
+            
+            if (!relations || relations.length === 0) {
+                return '';
+            }
+            
+            const essentialSkills = relations.filter(rel => rel.relationType === 'essential');
+            const optionalSkills = relations.filter(rel => rel.relationType === 'optional');
+            
+            let html = '<div class="related-section"><h4 style="color: var(--oxford-blue); margin-bottom: 16px; font-size: 20px; font-weight: var(--font-weight-bold);"><i class="fas fa-tools"></i> Required Skills</h4>';
+            
+            if (essentialSkills.length > 0) {
+                html += '<div class="skill-category"><h5 style="color: var(--tabiya-dark-green); margin-bottom: 12px; font-size: 16px; font-weight: var(--font-weight-semibold);">Essential Skills</h5><div class="skill-chips">';
+                essentialSkills.forEach(rel => {
+                    const skill = taxonomyData.skillsMaster[rel.skillId];
+                    if (skill) {
+                        html += `<div class="skill-chip clickable" onclick="selectItemFromExplore('${skill.id}', 'skill', event)" style="cursor: pointer;">
+                            <i class="fas fa-star" style="color: var(--tabiya-green); margin-right: 6px;"></i>
+                            ${skill.label}
+                        </div>`;
+                    }
+                });
+                html += '</div></div>';
+            }
+            
+            // ✅ FIXED: Match the structure of essentialSkills
+            if (optionalSkills.length > 0) {
+                html += '<div class="skill-category"><h5 style="color: var(--tabiya-dark-green); margin-bottom: 12px; font-size: 16px; font-weight: var(--font-weight-semibold);">Optional Skills</h5><div class="skill-chips">';
+                optionalSkills.forEach(rel => {
+                    const skill = taxonomyData.skillsMaster[rel.skillId];
+                    if (skill) {
+                        html += `<div class="skill-chip clickable" onclick="selectItemFromExplore('${skill.id}', 'skill', event)" style="cursor: pointer;">
+                            ${skill.label}
+                        </div>`;
+                    }
+                });
+                html += '</div></div>';
+            }
+            
+            html += '</div>';
+            return html;
         }
+
+        function renderSkillOccupationsForExplore(skill) {
+            const relations = taxonomyData.occupationToSkills.filter(rel => rel.skillId === skill.id);
+            
+            if (!relations || relations.length === 0) {
+                return '';
+            }
+            
+            let html = '<div class="related-section"><h4 style="color: var(--oxford-blue); margin-bottom: 16px; font-size: 20px; font-weight: var(--font-weight-bold);"><i class="fas fa-briefcase"></i> Related Occupations</h4><div class="skill-chips">';
+            
+            relations.forEach(rel => {
+                const occupation = taxonomyData.occupations.find(o => o.id === rel.occupationId);
+                if (occupation) {
+                    // Simple skill-chip style with just the occupation name
+                    html += `<div class="skill-chip clickable" onclick="selectItemFromExplore('${occupation.code}', 'occupation', event)" style="cursor: pointer;">
+                        ${occupation.label}
+                    </div>`;
+                }
+            });
+            
+            html += '</div></div>';
+            return html;
+        }
+
+        function renderRelatedItemsForExplore(item) {
+            if (item.type === 'group') {
+                const childOccupations = taxonomyData.occupations.filter(o => o.groupCode === item.code);
+                if (childOccupations.length === 0) return '';
+                
+                let html = '<div class="related-section"><h4 style="color: var(--oxford-blue); margin-bottom: 16px; font-size: 20px; font-weight: var(--font-weight-bold);"><i class="fas fa-briefcase"></i> Occupations in this Group</h4><div class="skill-chips">';
+                
+                childOccupations.slice(0, 20).forEach(occ => {
+                    // Simple chip style, just occupation name
+                    html += `<div class="skill-chip clickable" onclick="selectItemFromExplore('${occ.code}', 'occupation', event)" style="cursor: pointer;">
+                        ${occ.label}
+                    </div>`;
+                });
+                
+                if (childOccupations.length > 20) {
+                    html += `<div style="color: var(--text-muted); margin-top: 12px; font-size: 14px; padding: 8px;">...and ${childOccupations.length - 20} more occupations</div>`;
+                }
+                
+                html += '</div></div>';
+                return html;
+            }
+            
+            return '';
+        }
+
+        function showMoreOccupations() {
+            displayLimit.occupations += 10;
+            renderResultCategory('occupations', currentResults.occupations);
+        }
+
+        function showMoreSkills() {
+            displayLimit.skills += 10;
+            renderResultCategory('skills', currentResults.skills);
+        }
+
+  
 
 
         function getTabItemCount() {
@@ -4996,46 +6170,6 @@
                 return taxonomyData.stats.unseenTotal || 0;
             }
             return 0;
-        }
-        function renderSearchResults(results, query) {
-            const container = document.getElementById('treeContainer');
-            
-            if (results.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-search"></i>
-                        <h3>No results found</h3>
-                        <p>No items match "${query}". Try different keywords or check your spelling.</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            let html = `<h4 style="margin: 0 0 20px 0; color: var(--oxford-blue); font-size: 18px; font-weight: 700;">Search Results (${results.length})</h4>`;
-            
-            results.forEach(item => {
-                let type = 'occupation';
-                let code = item.code;
-                
-                if (item.level) {
-                    type = 'group';
-                } else if (item.skillType !== undefined || item.category !== undefined) {
-                    type = item.category ? 'skillgroup' : 'skill';
-                    code = item.id; // Skills use ID as identifier
-                }
-                
-                html += `
-                    <div class="tree-item">
-                        <div class="tree-node" onclick="selectItem('${code}', '${type}', event)" data-code="${code}">
-                            <div class="tree-toggle"></div>
-                            ${item.code ? `<span class="tree-code">${item.code}</span>` : ''}
-                            <span class="tree-label">${highlightMatch(item.label, query)}</span>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            container.innerHTML = html;
         }
 
         function highlightMatch(text, query) {
@@ -5101,25 +6235,38 @@
             return 'Occupation';
         }
 
-        function updateSearchStats(found = null, total = null, query = '') {
-            const statsEl = document.getElementById('searchStats');
-            const currentQuery = document.getElementById('searchBox').value.trim();
-            
-            if (found !== null && total !== null && query) {
-                if (found === 0) {
-                    statsEl.textContent = `No results for "${query}"`;
-                } else {
-                    statsEl.textContent = `Found ${found} of ${total} items for "${query}"`;
-                }
+
+        function fillExploreSearchQuery(query) {
+            const searchBox = document.getElementById('exploreSearchBox');
+            searchBox.value = query;
+            searchBox.focus();
+            performSearch();
+        }
+
+        function clearExploreSearch() {
+            const searchBox = document.getElementById('exploreSearchBox');
+            searchBox.value = '';
+            searchBox.focus();
+            document.getElementById('exploreSearchClearBtn').style.display = 'none';
+            showExploreEmptyState();
+            updateExploreSearchStats();
+        }
+
+        function showExploreEmptyState() {
+            document.querySelector('#exploreSearchResults .empty-search-state').style.display = 'block';
+            document.getElementById('exploreOccupationsSection').style.display = 'none';
+            document.getElementById('exploreSkillsSection').style.display = 'none';
+            document.getElementById('exploreNoResults').style.display = 'none';
+        }
+
+        function updateExploreSearchStats(results, total, query, message) {
+            const statsEl = document.getElementById('exploreSearchStats');
+            if (message) {
+                statsEl.textContent = message;
+            } else if (results !== undefined && total !== undefined && query) {
+                statsEl.textContent = `Found ${results} matches for "${query}" out of ${total} items`;
             } else {
-                const totalItems = getTabItemCount();
-                
-                if (currentQuery) {
-                    statsEl.textContent = `Searching "${currentQuery}" in ${totalItems} items...`;
-                } else {
-                    const tabName = getTabDisplayName();
-                    statsEl.textContent = `${totalItems} items in ${tabName}`;
-                }
+                statsEl.textContent = '';
             }
         }
 
@@ -6066,6 +7213,16 @@
         window.getPerformanceReport = getPerformanceReport;
         window.performanceManager = () => performanceManager;
         window.virtualScrollers = virtualScrollers;
+
+        // Set up event listeners after DOM is fully loaded
+        window.addEventListener('load', () => {
+            // Set up Explore search box listener
+            const exploreSearchBox = document.getElementById('exploreSearchBox');
+            if (exploreSearchBox) {
+                exploreSearchBox.addEventListener('input', debounce(performSearch, 300));
+                console.log('✓ Explore search box listener attached');
+            }
+        });
 
     </script>
 </body>
