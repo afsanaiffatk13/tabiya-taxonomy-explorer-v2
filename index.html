@@ -2131,13 +2131,19 @@
             
             if (redirectPath) {
                 pathname = redirectPath;
-                urlParams.delete('redirect');
-                search = urlParams.toString() ? '?' + urlParams.toString() : '';
+                // Remove ALL redirect parameters (not just one)
+                const newParams = new URLSearchParams();
+                for (const [key, value] of urlParams.entries()) {
+                    if (key !== 'redirect') {
+                        newParams.append(key, value);
+                    }
+                }
+                search = newParams.toString() ? '?' + newParams.toString() : '';
                 
                 // Clean up the URL
                 window.history.replaceState(null, '', pathname + search);
             }
-            const currentState = parseURL(window.location.pathname, window.location.search);
+            const currentState = parseURL(pathname, search);
             urlState = currentState;
             
             // Set app state from URL
@@ -6405,68 +6411,8 @@
             }
         }
 
-        function initializeFromURL() {
-            
-            const currentState = parseURL(window.location.pathname, window.location.search);
-            urlState = currentState;
-                    
-            // Set global app state from URL
-            currentLanguage = currentState.lang;
-            currentLocalization = currentState.localization === 'base' ? null : currentState.localization;
-            
-            // Update UI to match URL - language buttons
-            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`lang-${currentState.lang}`).classList.add('active');
-            
-            // Update UI to match URL - localization buttons
-            if (currentState.localization !== 'base') {
-                document.querySelectorAll('.loc-btn').forEach(btn => btn.classList.remove('active'));
-                document.getElementById(`loc-${currentState.localization}`).classList.add('active');
-            }
-            
-            // Show/hide localization selector based on language
-            updateLocalizationVisibility();
-            
-            // Set taxonomy tab
-            if (currentState.taxonomy !== 'about') {
-                currentMainTab = currentState.taxonomy;
-                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-                
-                if (currentState.taxonomy === 'occupations') {
-                    document.querySelector('.nav-tab:nth-child(2)').classList.add('active');
-                    document.getElementById('occupations-subtabs').classList.add('active');
-                } else if (currentState.taxonomy === 'skills') {
-                    document.querySelector('.nav-tab:nth-child(3)').classList.add('active');
-                }
-            }
-            
-            // Load translations and data, then handle item selection
-            Promise.resolve().then(() => {
-                // Load data first
-                return loadTaxonomyData();
-            }).then(() => {
-                // Once data is loaded, handle URL-specific actions
-                if (currentState.itemId) {
-                    selectItemById(currentState.itemId);
-                } else if (currentState.searchQuery) {
-                    document.getElementById('searchBox').value = currentState.searchQuery;
-                    performSearch();
-                } else {
-                    // Show appropriate default view
-                    if (currentState.taxonomy === 'skills') {
-                        renderSkillsTreeOptimized().then(() => showSkillsOverview());
-                    } else if (currentState.taxonomy === 'occupations') {
-                        renderTaxonomyTreeOptimized().then(() => showOccupationsOverview());
-                    } else {
-                        showAboutPanel();
-                    }
-                }
-            }).catch(error => {
-                console.error('❌ Error initializing from URL:', error);
-                // Fallback to default state
-                showAboutPanel();
-            });
-        }
+        // DUPLICATE FUNCTION REMOVED - The correct initializeFromURL() is defined at line 2124
+        // This duplicate was overriding the proper version that includes redirect handling
 
         // Make enhanced test function available globally
         window.taxonomyData = taxonomyData;
