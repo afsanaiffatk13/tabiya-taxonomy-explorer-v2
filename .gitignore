@@ -41,8 +41,8 @@ coverage/
 # Vite
 vite.config.ts.timestamp-*
 
-# Public folder (copied static assets - duplicates of root data/, assets/, locales/)
-public/
+# Note: public/ folder is NOT ignored - it contains static assets needed for deployment
+# (data files, embeddings, locales, images)
 
 # Python virtual environment (data processing)
 venv/
