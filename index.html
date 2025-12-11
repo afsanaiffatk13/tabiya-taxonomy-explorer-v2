@@ -14,11 +14,22 @@
 
     <title>Tabiya Taxonomy Explorer</title>
 
-    <!-- Transformers.js for semantic search - loaded exactly like original -->
+    <!-- Transformers.js for semantic search -->
     <script type="module">
-      import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+      import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+
+      // Use HuggingFace CDN-LFS directly (proper CORS headers)
+      env.allowRemoteModels = true;
+      env.remoteHost = 'https://huggingface.co';
+      env.remotePathTemplate = '{model}/resolve/main/';
+
+      // Enable caching for better performance
+      env.useBrowserCache = true;
+      env.cacheDir = '.cache';
+
       window.transformersPipeline = pipeline;
-      // Note: AI search works in production (proper domain). On localhost, keyword fallback is used.
+      window.transformersEnv = env;
+      console.log('Transformers.js configured for HuggingFace');
     </script>
   </head>
   <body>
