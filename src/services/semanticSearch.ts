@@ -100,24 +100,6 @@ export function isReady(): boolean {
 }
 
 /**
- * Clear corrupted model cache from IndexedDB
- * This helps when the model cache gets corrupted with HTML responses
- */
-async function clearModelCache(): Promise<void> {
-  try {
-    const databases = await indexedDB.databases();
-    for (const db of databases) {
-      if (db.name && (db.name.includes('transformers') || db.name.includes('onnx'))) {
-        console.log('Clearing corrupted cache:', db.name);
-        indexedDB.deleteDatabase(db.name);
-      }
-    }
-  } catch (e) {
-    console.log('Could not clear IndexedDB cache:', e);
-  }
-}
-
-/**
  * Initialize the semantic search system
  * Loads the embedding model and pre-computed embeddings
  */
@@ -139,31 +121,15 @@ export async function initializeSemanticSearch(): Promise<void> {
 
     console.log('✓ Transformers library loaded');
 
-    // Step 2: Load embedding model
+    // Step 2: Load embedding model (exact same as original)
     updateStatus('loading-model', 'Loading AI model (80MB, one-time download)...', 30);
 
     console.log('Starting to load embedding model...');
 
-    try {
-      // Use exact same call as original - simple, no options
-      embeddingModel = await window.transformersPipeline(
-        'feature-extraction',
-        'Xenova/all-MiniLM-L6-v2'
-      );
-    } catch (modelError) {
-      // If model loading fails, try clearing cache and retrying once
-      console.log('Model loading failed, clearing cache and retrying...');
-      await clearModelCache();
-
-      // Wait a moment for IndexedDB to clear
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Retry loading
-      embeddingModel = await window.transformersPipeline(
-        'feature-extraction',
-        'Xenova/all-MiniLM-L6-v2'
-      );
-    }
+    embeddingModel = await window.transformersPipeline(
+      'feature-extraction',
+      'Xenova/all-MiniLM-L6-v2'
+    );
 
     console.log('✓ Embedding model loaded');
     updateStatus('loading-embeddings', 'Loading taxonomy embeddings...', 60);
