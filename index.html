@@ -18,18 +18,18 @@
     <script type="module">
       import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
 
-      // Use HuggingFace CDN-LFS directly (proper CORS headers)
+      // Allow loading models from HuggingFace (default behavior)
       env.allowRemoteModels = true;
-      env.remoteHost = 'https://huggingface.co';
-      env.remotePathTemplate = '{model}/resolve/main/';
 
-      // Enable caching for better performance
-      env.useBrowserCache = true;
-      env.cacheDir = '.cache';
+      // Don't use local models - always fetch from remote
+      env.allowLocalModels = false;
 
       window.transformersPipeline = pipeline;
       window.transformersEnv = env;
-      console.log('Transformers.js configured for HuggingFace');
+      console.log('Transformers.js loaded, env:', {
+        allowRemoteModels: env.allowRemoteModels,
+        backends: env.backends
+      });
     </script>
   </head>
   <body>
