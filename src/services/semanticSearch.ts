@@ -153,8 +153,18 @@ export async function initializeSemanticSearch(): Promise<void> {
     }
 
     const arrayBuffer = await response.arrayBuffer();
-    const decompressed = pako.ungzip(new Uint8Array(arrayBuffer), { to: 'string' });
-    embeddingData = JSON.parse(decompressed);
+
+    // Try to decompress with pako. If it fails (browser already decompressed due to Content-Encoding),
+    // fall back to parsing the raw text
+    let jsonString: string;
+    try {
+      jsonString = pako.ungzip(new Uint8Array(arrayBuffer), { to: 'string' });
+    } catch {
+      // Browser already decompressed it (Content-Encoding: gzip was set)
+      console.log('Embeddings already decompressed by browser, parsing directly');
+      jsonString = new TextDecoder().decode(arrayBuffer);
+    }
+    embeddingData = JSON.parse(jsonString);
 
     console.log('✓ Loaded embeddings:', {
       occupations: embeddingData?.occupations.length,
