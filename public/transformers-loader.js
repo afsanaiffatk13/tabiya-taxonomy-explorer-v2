@@ -1,29 +1,15 @@
-// Debug: Intercept all fetch requests to see what URLs are being requested
-const originalFetch = window.fetch;
-window.fetch = async function(...args) {
-  const url = args[0]?.toString?.() || args[0];
-  console.log('[FETCH DEBUG] Requesting:', url);
-  try {
-    const response = await originalFetch.apply(this, args);
-    console.log('[FETCH DEBUG] Response for', url, '- Status:', response.status, 'Content-Type:', response.headers.get('content-type'));
-    return response;
-  } catch (error) {
-    console.error('[FETCH DEBUG] Error fetching', url, ':', error);
-    throw error;
-  }
-};
-
 // Load Transformers.js and expose pipeline globally
 import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
 
-// Log the env settings to see what's configured
+// CRITICAL: Disable local model loading - we don't have models locally
+// This forces transformers.js to fetch from HuggingFace CDN
+env.allowLocalModels = false;
+
+// Log the env settings after configuration
 console.log('Transformers.js env settings:', {
-  backends: env.backends,
   allowLocalModels: env.allowLocalModels,
   allowRemoteModels: env.allowRemoteModels,
-  localModelPath: env.localModelPath,
   remoteHost: env.remoteHost,
-  remotePathTemplate: env.remotePathTemplate,
 });
 
 window.transformersPipeline = pipeline;
