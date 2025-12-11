@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # Build outputs
 dist/
@@ -8,16 +11,41 @@ build/
 _site/
 
 # Environment files
-.env*
+.env
+.env.local
+.env.*.local
 
 # Editor files
 .vscode/
 .idea/
 *.swp
+*.swo
 
 # OS files
 .DS_Store
 Thumbs.db
+nul
+
+# Backup folder (old implementation)
+backup/
 
 # Logs
 *.log
+
+# Testing
+coverage/
+
+# TypeScript
+*.tsbuildinfo
+
+# Vite
+vite.config.ts.timestamp-*
+
+# Public folder (copied static assets - duplicates of root data/, assets/, locales/)
+public/
+
+# Python virtual environment (data processing)
+venv/
+
+# TypeScript node build output
+dist-node/

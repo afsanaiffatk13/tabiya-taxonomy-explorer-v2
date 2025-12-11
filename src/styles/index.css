@@ -1,0 +1,190 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tabiya Design System - CSS Custom Properties */
+:root {
+  /* Primary Colors */
+  --color-tabiya-green: #00FF91;
+  --color-tabiya-green-hover: #00E682;
+  --color-tabiya-gray: #F8F5F0;
+
+  /* Secondary Colors */
+  --color-soft-green: #E4F8E2;
+  --color-green-2: #26B87D;
+  --color-green-3: #247066;
+  --color-oxford-blue: #002147;
+
+  /* Extended Palette */
+  --color-light-green: #D7FFEF;
+  --color-border: #E5E7EB;
+  --color-text-muted: #6B7280;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #3B82F6;
+  --color-white: #FFFFFF;
+
+  /* Typography */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Font Sizes */
+  --font-size-xs: 11px;
+  --font-size-sm: 13px;
+  --font-size-base: 15px;
+  --font-size-lg: 18px;
+  --font-size-xl: 24px;
+  --font-size-2xl: 32px;
+  --font-size-3xl: 48px;
+
+  /* Spacing (4px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+  /* Motion */
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Base Styles */
+@layer base {
+  html {
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    line-height: 1.6;
+    color: var(--color-oxford-blue);
+    background-color: var(--color-tabiya-gray);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+  }
+
+  #root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Focus styles for accessibility */
+  :focus-visible {
+    outline: 2px solid var(--color-tabiya-green);
+    outline-offset: 2px;
+  }
+
+  /* Remove default focus for mouse users */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* Heading styles */
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--color-oxford-blue);
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  h1 {
+    font-size: var(--font-size-3xl);
+    font-weight: 700;
+  }
+
+  h2 {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+  }
+
+  h3 {
+    font-size: var(--font-size-xl);
+  }
+
+  h4 {
+    font-size: var(--font-size-lg);
+  }
+
+  /* Link styles */
+  a {
+    color: var(--color-green-3);
+    text-decoration: none;
+    transition: color var(--duration-fast) var(--ease-out);
+  }
+
+  a:hover {
+    color: var(--color-oxford-blue);
+  }
+
+  /* Selection color */
+  ::selection {
+    background-color: var(--color-light-green);
+    color: var(--color-oxford-blue);
+  }
+}
+
+/* Component Layer */
+@layer components {
+  /* Container utility */
+  .container-app {
+    max-width: 1280px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--space-8);
+    padding-right: var(--space-8);
+  }
+
+  @media (max-width: 768px) {
+    .container-app {
+      padding-left: var(--space-4);
+      padding-right: var(--space-4);
+    }
+  }
+}
+
+/* Utilities Layer */
+@layer utilities {
+  /* Screen reader only */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* Respect reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
