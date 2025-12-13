@@ -27,14 +27,14 @@ export default function TabNavigation() {
               role="tab"
               aria-selected={isTabActive(id)}
               className={({ isActive }) =>
-                `relative flex items-center gap-2 px-5 py-4 text-sm font-medium transition-colors ${
+                `relative flex items-center gap-3 px-6 py-5 text-base font-medium transition-colors ${
                   isActive
-                    ? 'text-oxford-blue after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[3px] after:bg-tabiya-green'
+                    ? 'text-oxford-blue after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[4px] after:bg-tabiya-green'
                     : 'text-text-muted hover:text-oxford-blue'
                 }`
               }
             >
-              <Icon size={18} />
+              <Icon size={22} />
               <span>{label}</span>
             </NavLink>
           ))}

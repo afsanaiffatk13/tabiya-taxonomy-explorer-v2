@@ -106,7 +106,7 @@ export default function SkillsPage() {
                       onCollapseAll={collapseAll}
                       isLoading={isLoading}
                       emptyMessage="No skills found"
-                      title="Skill Hierarchy"
+                      title="Skills Tree"
                       showSearch
                       searchValue={treeFilter}
                       onSearchChange={setTreeFilter}

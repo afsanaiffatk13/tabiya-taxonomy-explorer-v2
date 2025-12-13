@@ -235,4 +235,34 @@ This is a living document tracking key architectural and implementation decision
 
 ---
 
+## Decision #17
+**Date:** 2025-12-11
+**Decision:** Load Transformers.js via external script (v2.17.1)
+**Context:** Transformers.js bundling caused issues with Vite, and v2.17.2+ uses HuggingFace XetHub which has connection issues
+**Choice:** Load Transformers.js v2.17.1 from jsDelivr CDN via external script in `public/transformers-loader.js`
+**Rationale:**
+- Vite was not handling Transformers.js imports correctly in production
+- Version 2.17.2+ uses HuggingFace's XetHub (`cas-bridge.xethub.hf.co`) which has `ERR_CONNECTION_RESET` errors
+- Version 2.17.1 uses legacy HuggingFace CDN which works reliably
+- External script avoids Vite bundling issues
+- `env.allowLocalModels = false` prevents transformers.js from trying local model paths (which would hit Vercel SPA rewrite and return HTML)
+**Impact:** AI semantic search works reliably in production on Vercel
+
+---
+
+## Decision #18
+**Date:** 2025-12-11
+**Decision:** Gzipped embeddings with fallback decompression
+**Context:** Embeddings file needs to be compressed for fast loading, but browser behavior varies with Content-Encoding header
+**Choice:** Store embeddings as `.json.gz`, use pako for decompression with fallback for browser-decompressed content
+**Rationale:**
+- 5MB gzipped vs much larger uncompressed
+- Some servers set `Content-Encoding: gzip` causing browser to auto-decompress
+- Some servers serve raw gzip requiring manual decompression
+- Try/catch fallback in `semanticSearch.ts` handles both cases
+- Removed explicit `Content-Encoding` header from `vercel.json` to avoid double-decompression
+**Impact:** Embeddings load correctly regardless of server configuration
+
+---
+
 <!-- NEW DECISIONS SHOULD BE APPENDED BELOW THIS LINE -->

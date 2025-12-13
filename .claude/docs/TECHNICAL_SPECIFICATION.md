@@ -2,8 +2,8 @@
 ## Technical Specification Document
 
 **Version:** 2.0 (Rebuild)
-**Date:** December 9, 2025
-**Status:** Draft for Approval
+**Date:** December 11, 2025
+**Status:** Production - Deployed to Vercel
 
 ---
 
@@ -1000,6 +1000,43 @@ jobs:
 
 ---
 
-**Document Status:** Draft for Approval
+**Document Status:** Implemented
 
-**Next Steps:** Upon approval, proceed with Phase 1 (Foundation) implementation.
+---
+
+## 14. Implementation Status (December 2025)
+
+### Completed Features
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| React + TypeScript + Vite setup | ✅ Done | Full project structure |
+| Tailwind CSS styling | ✅ Done | Design system implemented |
+| Zustand state management | ✅ Done | App store with persistence |
+| React Router navigation | ✅ Done | Basic routing works |
+| CSV data loading | ✅ Done | Loads from GitHub raw URLs |
+| Occupation tree browser | ✅ Done | Seen/Unseen economy tabs |
+| Skills tree browser | ✅ Done | All skill types |
+| Detail panels | ✅ Done | With related items |
+| Semantic search (AI) | ✅ Done | Transformers.js + pre-computed embeddings |
+| Keyword search fallback | ✅ Done | When AI not ready |
+| Multi-language (EN/ES) | ✅ Done | i18next integration |
+| Vercel deployment | ✅ Done | Auto-deploy from GitHub |
+| Deep linking | ⚠️ Partial | URL state reverted due to issues |
+
+### Known Issues / Future Work
+
+| Issue | Priority | Notes |
+|-------|----------|-------|
+| Local dev server static files | Low | Vite history fallback catches public files; works in production |
+| Service worker offline | Medium | Not yet implemented |
+| E2E tests | Medium | Playwright tests not written |
+| Regional localizations | Low | Infrastructure ready, no regional data yet |
+| Export functionality | Low | Not yet implemented |
+
+### Deployment Notes
+
+- **Production URL**: https://tabiya-taxonomy-explorer-v2.vercel.app
+- **Transformers.js**: v2.17.1 (avoids XetHub connection issues in v2.17.2)
+- **Model loading**: `env.allowLocalModels = false` required for Vercel
+- **Embeddings**: ~64MB gzipped file loaded on Explore tab access

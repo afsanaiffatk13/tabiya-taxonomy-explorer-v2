@@ -150,7 +150,7 @@ export default function OccupationsPage() {
                           ? 'No unseen economy occupations found'
                           : 'No occupations found'
                       }
-                      title="Occupation Hierarchy"
+                      title="Occupation Tree"
                       showSearch
                       searchValue={treeFilter}
                       onSearchChange={setTreeFilter}

@@ -23,7 +23,7 @@ This document tracks development progress across all phases. Update status as ta
 | [ ] | Set up Vitest for testing |
 | [x] | Initialize Git repository structure |
 | [ ] | Configure GitHub Actions CI pipeline |
-| [ ] | Set up Vercel project |
+| [x] | Set up Vercel project |
 | [x] | Configure static asset serving (copy to public/ folder) |
 
 ### Design System Implementation
@@ -70,8 +70,8 @@ This document tracks development progress across all phases. Update status as ta
 | Status | Task |
 |--------|------|
 | [x] | Set up React Router |
-| [~] | Implement URL state sync with Zustand |
-| [~] | Handle deep linking (hook created, needs testing) |
+| [ ] | Implement URL state sync with Zustand (reverted, needs re-implementation) |
+| [ ] | Handle deep linking (reverted, needs re-implementation) |
 | [x] | Implement 404 handling |
 | [ ] | Add redirects from old URL format |
 
@@ -111,38 +111,38 @@ This document tracks development progress across all phases. Update status as ta
 
 ---
 
-## Phase 3: Search & AI Features
+## Phase 3: Search & AI Features - COMPLETE
 **Target:** Keyword search, semantic search, embeddings
 
 ### Keyword Search
 | Status | Task |
 |--------|------|
 | [x] | Create SearchInput component |
-| [ ] | Implement debounced search |
-| [ ] | Create keyword matching algorithm |
+| [x] | Implement debounced search |
+| [x] | Create keyword matching algorithm |
 | [ ] | Highlight matching terms in results |
-| [ ] | Display search results list |
+| [x] | Display search results list |
 
 ### Semantic Search
 | Status | Task |
 |--------|------|
-| [ ] | Lazy load Transformers.js |
-| [ ] | Load and decompress embeddings file |
-| [ ] | Implement embedding generation for queries |
-| [ ] | Create cosine similarity function |
-| [ ] | Implement result ranking |
-| [ ] | Add LRU cache for query embeddings |
-| [ ] | Show "AI Search Ready" status indicator |
+| [x] | Lazy load Transformers.js (via external script, Decision #17) |
+| [x] | Load and decompress embeddings file (Decision #18) |
+| [x] | Implement embedding generation for queries |
+| [x] | Create cosine similarity function |
+| [x] | Implement result ranking |
+| [x] | Add LRU cache for query embeddings |
+| [x] | Show "AI Search Ready" status indicator |
 
 ### Explore Page
 | Status | Task |
 |--------|------|
 | [x] | Create Explore page layout |
-| [ ] | Implement search mode toggle (keyword/semantic) |
-| [ ] | Display categorized results (occupations/skills) |
+| [x] | Implement search mode toggle (keyword/semantic) |
+| [x] | Display categorized results (occupations/skills) |
 | [x] | Add suggestion chips |
 | [x] | Handle empty states |
-| [ ] | Navigate to item on result click |
+| [x] | Navigate to item on result click |
 
 ---
 
@@ -263,4 +263,4 @@ This document tracks development progress across all phases. Update status as ta
 
 ---
 
-**Last Updated:** 2025-12-10 (Phase 2 - GitHub CDN data loading working, lazy tree loading implemented, URL state sync in progress)
+**Last Updated:** 2025-12-11 (Phase 3 complete - AI semantic search working on Vercel, deep linking needs re-implementation)

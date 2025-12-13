@@ -56,6 +56,14 @@ function TreeNodeComponent({
     onSelect(node.id, node.entityType);
   }, [node.id, node.entityType, onSelect]);
 
+  // Handle row click - toggle expand/collapse if has children, also select
+  const handleRowClick = useCallback(() => {
+    if (hasChildren) {
+      onToggle(node.id);
+    }
+    onSelect(node.id, node.entityType);
+  }, [hasChildren, node.id, node.entityType, onToggle, onSelect]);
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLDivElement>) => {
       switch (e.key) {
@@ -90,7 +98,7 @@ function TreeNodeComponent({
             : 'hover:bg-soft-green'
         }`}
         style={{ paddingLeft: `${indent + 8}px` }}
-        onClick={handleSelect}
+        onClick={handleRowClick}
         onKeyDown={handleKeyDown}
         tabIndex={0}
         role="button"
@@ -127,7 +135,7 @@ function TreeNodeComponent({
         </span>
 
         {/* Label */}
-        <span className="min-w-0 flex-1 truncate text-sm">
+        <span className="min-w-0 flex-1 truncate text-base">
           <span className="mr-1.5 font-mono text-xs text-text-muted">
             {node.code}
           </span>

@@ -75,4 +75,4 @@ export function NetworkEdge({ edge }: NetworkEdgeProps) {
       className="transition-opacity duration-300"
     />
   );
-});
+}

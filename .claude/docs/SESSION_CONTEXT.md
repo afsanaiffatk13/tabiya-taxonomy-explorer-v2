@@ -1,32 +1,32 @@
 # Session Context
 
-**Last Session Date:** 2025-12-10
-**Session Duration:** ~2 hours
+**Last Session Date:** 2025-12-11
+**Session Duration:** Extended debugging session
 
 ---
 
 ## What Was Done This Session
 
-### 1. Fixed Data Loading Performance (MAJOR)
-- Identified that local file serving via Vite was extremely slow (80-140 seconds per file)
-- Root cause: Dropbox Smart Sync was interfering with file access
-- **Solution:** Changed dataLoader to fetch CSV files from GitHub raw URLs (Decision #15)
-- Auto-detects latest version from GitHub API with 5-minute cache
-- Data now loads in 1-2 seconds total
+### 1. Fixed AI Semantic Search on Vercel (MAJOR)
+- Debugged `SyntaxError: Unexpected token '<', "<!DOCTYPE "...` errors
+- Root cause: Transformers.js trying local model paths → Vercel SPA rewrite returned HTML
+- Multiple iterations to find working solution:
+  1. Set `env.allowLocalModels = false` - prevented local path lookups
+  2. Downgraded to Transformers.js v2.17.1 - v2.17.2+ uses XetHub with connection issues
+  3. Fixed embeddings decompression - added fallback for browser auto-decompression
 
-### 2. Implemented Lazy Tree Loading (MAJOR)
-- Identified that building full recursive tree upfront was slow
-- **Solution:** Only build root nodes initially; children loaded on-demand (Decision #16)
-- Added `getChildrenForNode()` function to dataLoader
-- Updated TreeNode component to use `childCount` and lazy-load children when expanded
-- Added `occChildrenMap`, `occParentMap`, `skillChildrenMap`, `skillParentMap` to TaxonomyData type
+### 2. Deployed to Vercel (MAJOR)
+- App is now live on Vercel at https://explorer.tabiya.org
+- Production build working with AI semantic search
 
-### 3. Started URL State Sync (PARTIAL)
-- Created `useURLState` hook for URL synchronization
-- Created `useNavigateToItem` hook for programmatic navigation
-- Updated OccupationsPage and SkillsPage to use the hook
-- URL now updates when items are selected (e.g., `/en/occupations/seen/0110.1`)
-- **Needs testing:** Deep linking and back/forward navigation
+### 3. Identified Local Dev Issue (KNOWN ISSUE)
+- `transformers-loader.js` gets 404 in local dev (Vite history fallback)
+- Works in production - low priority to fix
+- Workaround: Test AI search on deployed version
+
+### 4. Confirmed Deep Linking Status
+- URL state sync implementation was previously reverted
+- Needs re-implementation
 
 ---
 
@@ -34,81 +34,75 @@
 
 | # | Decision | Impact |
 |---|----------|--------|
-| 15 | Load CSV from GitHub CDN | Fast data loading (1-2s vs 140s) |
-| 16 | Lazy tree child loading | Fast initial render |
+| 17 | Transformers.js via external script (v2.17.1) | AI search works on Vercel |
+| 18 | Gzipped embeddings with fallback decompression | Handles different server configs |
 
 ---
 
 ## Current Project State
 
-**Phase:** 2 - Core Features (In Progress)
+**Phase:** Phase 3 Complete, Phase 2 85% (missing deep linking)
 
 **What's Working:**
-- Data loads from GitHub CDN quickly
+- Data loads from GitHub CDN quickly (~2s)
 - Tree renders with lazy child loading
-- Expanding nodes loads children on-demand
-- URL updates when selecting items
+- AI semantic search on Vercel
+- Keyword search fallback
+- Deployed to production (Vercel)
 - Type-check and lint both passing
 
-**What Needs Testing:**
-- Deep linking (navigating directly to `/en/occupations/seen/0110.1`)
-- Browser back/forward navigation
-- Skills page URL sync
-
-**What's Not Started:**
+**What Needs Work:**
+- Deep linking / URL state sync (reverted, needs fresh implementation)
 - SessionStorage caching
 - Virtual scrolling for large lists
+- Local dev static file serving (low priority)
 
 ---
 
 ## Files Modified This Session
 
 ### New Files
-- `src/hooks/useURLState.ts` - URL state synchronization hooks
+- None
 
 ### Modified Files
-- `src/services/dataLoader.ts` - GitHub CDN loading, lazy tree building, getChildrenForNode()
-- `src/types/taxonomy.ts` - Added hierarchy maps to TaxonomyData
-- `src/components/TaxonomyTree/TreeNode.tsx` - Lazy child loading
-- `src/components/TaxonomyTree/TaxonomyTree.tsx` - Pass taxonomyData and domain props
-- `src/pages/OccupationsPage.tsx` - useURLState hook, URL updates on selection
-- `src/pages/SkillsPage.tsx` - useURLState hook, URL updates on selection
-- `src/hooks/index.ts` - Export new hooks
-- `vite.config.ts` - Disabled file watching (watch: null)
-
-### Config Changes
-- Disabled Vite file watching to avoid Dropbox issues
+- `public/transformers-loader.js` - Set v2.17.1, `env.allowLocalModels = false`
+- `vercel.json` - Removed Content-Encoding header
+- `src/services/semanticSearch.ts` - Added decompression fallback
+- `.claude/docs/PROJECT_STATUS.md` - Updated status
+- `.claude/docs/TODO.md` - Marked Phase 3 complete
+- `.claude/docs/DECISIONS.md` - Added decisions #17, #18
+- `.claude/docs/SESSION_CONTEXT.md` - This file
 
 ---
 
 ## Notes & Priorities for Next Session
 
-### Priority 1: Test URL State Sync
-- Test deep linking: Navigate directly to `/en/occupations/seen/0110.1`
-- Test back/forward buttons
-- Fix any issues with the useURLState hook
+### Priority 1: Re-implement Deep Linking
+- URL should update when selecting items: `/en/occupations/seen/0110.1`
+- Direct URL navigation should work (select item, expand tree)
+- Back/forward navigation should work
+- Previous useURLState hook was reverted - may need different approach
 
-### Priority 2: Implement SessionStorage Caching
-- Cache parsed data to avoid re-fetching on page refresh
+### Priority 2: SessionStorage Caching
+- Cache parsed taxonomy data to avoid re-fetching on refresh
 - Should significantly speed up subsequent loads
 
-### Priority 3: Consider Data Hosting
-- Currently using GitHub raw URLs
-- Could switch to jsDelivr CDN for better caching: `https://cdn.jsdelivr.net/gh/tabiya-tech/taxonomy-model-application@main/...`
-- Or host on dedicated CDN for production
+### Priority 3: Virtual Scrolling
+- For Skills tab which has 13,000+ items
+- Only render visible items in the tree
 
 ---
 
 ## Blockers & Dependencies
 
-**None currently** - Main data loading issue resolved.
+**None currently** - Main AI search issue resolved.
 
 ---
 
 ## Dev Server
 
-Last running at: `http://localhost:5173/`
-Shell ID: 8fc081 (may be stale)
+Local dev has known issue with `transformers-loader.js` 404.
+For AI search testing, use the deployed Vercel version.
 
 To start fresh:
 ```bash
@@ -123,7 +117,7 @@ npm run dev
 |-------|--------|
 | Type Check | PASSING |
 | Lint | PASSING |
-| Build | Not tested this session |
+| Build | PASSING (deployed to Vercel) |
 
 ---
 
