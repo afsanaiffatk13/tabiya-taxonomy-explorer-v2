@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { Search, Sparkles, Loader2, Briefcase, BookOpen, X } from 'lucide-react';
 import { Input, Card, CardContent, Tag } from '@components/ui';
 import {
@@ -10,6 +10,8 @@ import {
   type SearchResult,
 } from '@/services';
 import { useAppStore } from '@/store';
+import { NetworkGraph } from '@/components/NetworkGraph';
+import type { NodeType } from '@/components/NetworkGraph';
 
 const exampleQueries = [
   'caring for elderly people',
@@ -20,9 +22,17 @@ const exampleQueries = [
   'driving vehicles',
 ];
 
+// Network view node type
+interface NetworkViewNode {
+  id: string;
+  type: NodeType;
+  label: string;
+  code: string;
+}
+
 export default function ExplorePage() {
-  const { lang = 'en' } = useParams<{ lang: string }>();
-  const navigate = useNavigate();
+  // Language param available for future i18n
+  useParams<{ lang: string }>();
 
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -34,9 +44,11 @@ export default function ExplorePage() {
     skills: SearchResult[];
   } | null>(null);
 
-  // Get store actions for navigation
-  const selectItem = useAppStore((state) => state.selectItem);
-  const expandToItem = useAppStore((state) => state.expandToItem);
+  // Network view state - when set, shows the network graph instead of search results
+  const [networkViewNode, setNetworkViewNode] = useState<NetworkViewNode | null>(null);
+
+  // Get taxonomy data from store for network graph
+  const taxonomyData = useAppStore((state) => state.taxonomyData);
 
   // Initialize semantic search when component mounts
   useEffect(() => {
@@ -83,23 +95,23 @@ export default function ExplorePage() {
     [searchStatus]
   );
 
-  // Handle clicking on a search result
+  // Handle clicking on a search result - show network view instead of navigating away
   const handleResultClick = useCallback(
     (result: SearchResult) => {
-      const entityType =
-        result.type === 'occupation' ? 'occupation' : 'skill';
-      selectItem(result.id, entityType);
-      expandToItem(result.id);
-
-      // Navigate to the appropriate page
-      if (result.type === 'occupation') {
-        navigate(`/${lang}/occupations`);
-      } else {
-        navigate(`/${lang}/skills`);
-      }
+      setNetworkViewNode({
+        id: result.id,
+        type: result.type as NodeType,
+        label: result.label,
+        code: result.code,
+      });
     },
-    [selectItem, expandToItem, navigate, lang]
+    []
   );
+
+  // Close network view and return to search results
+  const handleCloseNetworkView = useCallback(() => {
+    setNetworkViewNode(null);
+  }, []);
 
   // Clear search
   const clearSearch = useCallback(() => {
@@ -111,6 +123,21 @@ export default function ExplorePage() {
   const isLoading = searchStatus === 'loading-model' || searchStatus === 'loading-embeddings';
   const hasError = searchStatus === 'error';
   const canSearch = isReady || hasError; // Allow search even on error (keyword fallback)
+
+  // If network view is active, show the network graph
+  // Use mock data if taxonomy data hasn't loaded (for testing/development)
+  if (networkViewNode) {
+    return (
+      <div className="container-app py-8">
+        <NetworkGraph
+          initialNode={networkViewNode}
+          taxonomyData={taxonomyData}
+          onClose={handleCloseNetworkView}
+          useMockData={!taxonomyData}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="container-app py-8">
@@ -283,6 +310,44 @@ export default function ExplorePage() {
               Type a natural language query above to find relevant occupations and skills.
               For example, try "caring for elderly people" or "Python programming".
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Test Network Graph with Mock Data (dev mode) */}
+      {!taxonomyData && (
+        <div className="mx-auto mt-8 max-w-2xl">
+          <div className="rounded-lg border border-dashed border-orange-300 bg-orange-50 p-6">
+            <h3 className="mb-2 text-lg font-semibold text-orange-700">
+              Taxonomy Data Not Loaded
+            </h3>
+            <p className="mb-4 text-sm text-orange-600">
+              The taxonomy data failed to load from GitHub. You can still test the network visualization with mock data.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setNetworkViewNode({
+                  id: 'occ-1',
+                  type: 'occupation',
+                  label: 'Crop Farmer',
+                  code: '6111.1',
+                })}
+                className="rounded-full bg-orange-200 px-4 py-2 text-sm font-medium text-orange-800 hover:bg-orange-300"
+              >
+                Test: Crop Farmer (Occupation)
+              </button>
+              <button
+                onClick={() => setNetworkViewNode({
+                  id: 'skill-1',
+                  type: 'skill',
+                  label: 'Soil Preparation',
+                  code: 'S1.1',
+                })}
+                className="rounded-full bg-orange-200 px-4 py-2 text-sm font-medium text-orange-800 hover:bg-orange-300"
+              >
+                Test: Soil Preparation (Skill)
+              </button>
+            </div>
           </div>
         </div>
       )}

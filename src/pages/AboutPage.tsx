@@ -1,157 +1,168 @@
-import { ArrowRight, Briefcase, Lightbulb, Search, Globe } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
-import { Button, Card, CardContent } from '@components/ui';
 
 export default function AboutPage() {
   const { lang = 'en' } = useParams<{ lang: string }>();
 
-  const features = [
-    {
-      icon: Search,
-      title: 'AI-Powered Search',
-      description:
-        'Find occupations and skills using natural language. Our semantic search understands what you mean, not just what you type.',
-    },
-    {
-      icon: Briefcase,
-      title: 'Comprehensive Occupations',
-      description:
-        'Explore over 3,000 occupations from both the formal "Seen Economy" and informal "Unseen Economy" including care work and domestic labor.',
-    },
-    {
-      icon: Lightbulb,
-      title: 'Skills Mapping',
-      description:
-        'Discover the skills, competencies, and knowledge areas associated with each occupation.',
-    },
-    {
-      icon: Globe,
-      title: 'Multi-Language Support',
-      description:
-        'Access the taxonomy in English and Spanish, with regional adaptations for South Africa.',
-    },
-  ];
-
   return (
-    <div className="container-app py-12">
+    <div className="bg-white">
       {/* Hero Section */}
-      <section className="mb-16 text-center">
-        <h1 className="mb-4 text-3xl font-bold text-oxford-blue md:text-4xl">
-          Tabiya Taxonomy Explorer
-        </h1>
-        <p className="mx-auto mb-8 max-w-2xl text-lg text-text-muted">
-          Explore the comprehensive framework for categorizing all forms of work. Unlike
-          traditional classifications, Tabiya recognizes both formal employment and the often
-          invisible work that sustains communities.
-        </p>
-        <div className="flex flex-wrap justify-center gap-4">
-          <Link to={`/${lang}/explore`}>
-            <Button size="lg">
-              Start Exploring
-              <ArrowRight size={20} />
-            </Button>
-          </Link>
-          <Link to={`/${lang}/occupations`}>
-            <Button variant="secondary" size="lg">
-              Browse Occupations
-            </Button>
-          </Link>
+      <section className="bg-soft-green px-6 py-6 md:px-16 md:py-10">
+        <div className="mx-auto flex max-w-[854px] flex-col items-center gap-4 text-center md:gap-6">
+          {/* Text */}
+          <div className="flex flex-col gap-2 md:gap-3">
+            <h1 className="text-2xl font-bold leading-[1.1] tracking-[-0.5px] text-oxford-blue md:text-[30px]">
+              A Skills-First Taxonomy for
+              <br />
+              Inclusive Labor Markets
+            </h1>
+            <p className="text-sm font-medium leading-[1.45] tracking-[-0.09px] text-green-3 md:text-base md:tracking-[-0.12px]">
+              Recognizing the full spectrum of human capital, from formal employment
+              to caregiving, from paid work to community contribution.
+            </p>
+          </div>
+          {/* Buttons */}
+          <div className="flex w-full flex-col gap-4 md:w-auto md:flex-row">
+            <a
+              href="https://docs.tabiya.org/our-tech-stack/inclusive-livelihoods-taxonomy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full md:w-auto"
+            >
+              <button className="w-full rounded-xl bg-green-3 px-4 py-3 text-lg font-medium leading-[1.45] tracking-[-0.09px] text-soft-green transition-colors hover:bg-oxford-blue md:w-auto">
+                Our Methodology
+              </button>
+            </a>
+            <Link to={`/${lang}/explore`} className="w-full md:w-auto">
+              <button className="w-full rounded-xl bg-tabiya-green px-4 py-3 text-lg font-medium leading-[1.45] tracking-[-0.09px] text-oxford-blue transition-colors hover:bg-oxford-blue hover:text-soft-green md:w-auto">
+                Start exploring
+              </button>
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* What is Tabiya Section */}
-      <section className="mb-16">
-        <Card className="bg-light-green">
-          <CardContent>
-            <h2 className="mb-4 text-2xl font-bold text-oxford-blue">
-              What is the Tabiya Taxonomy?
-            </h2>
-            <div className="grid gap-6 md:grid-cols-2">
-              <div>
-                <h3 className="mb-2 text-lg font-semibold text-green-3">The Seen Economy</h3>
-                <p className="text-oxford-blue">
-                  Traditional, formal work recognized in labor markets. Based on ESCO (European
-                  Skills, Competences, Qualifications and Occupations) classifications adapted for
-                  African contexts.
-                </p>
+      {/* Stats Bar */}
+      <section className="bg-soft-green py-4 md:py-6">
+        <div className="container-app">
+          <div className="flex flex-col items-center justify-center gap-6 md:flex-row md:gap-0">
+            {/* Occupations */}
+            <div className="flex flex-col items-center text-center md:flex-1">
+              <div className="text-5xl font-bold md:text-6xl">
+                <span className="bg-tabiya-green/30 px-2 text-oxford-blue">3,074</span>
               </div>
-              <div>
-                <h3 className="mb-2 text-lg font-semibold text-green-3">The Unseen Economy</h3>
-                <p className="text-oxford-blue">
-                  Informal work, care work, and domestic labor often invisible in economic
-                  statistics. Based on ICATUS (International Classification of Activities for
-                  Time-Use Statistics).
-                </p>
-              </div>
+              <div className="mt-2 text-lg font-medium uppercase tracking-wider text-green-3">Occupations</div>
             </div>
-          </CardContent>
-        </Card>
-      </section>
 
-      {/* Features Grid */}
-      <section className="mb-16">
-        <h2 className="mb-8 text-center text-2xl font-bold text-oxford-blue">
-          How to Use This Explorer
-        </h2>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {features.map(({ icon: Icon, title, description }) => (
-            <Card key={title}>
-              <CardContent>
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-soft-green">
-                  <Icon className="h-6 w-6 text-green-3" />
-                </div>
-                <h3 className="mb-2 font-semibold text-oxford-blue">{title}</h3>
-                <p className="text-sm text-text-muted">{description}</p>
-              </CardContent>
-            </Card>
-          ))}
+            {/* Divider */}
+            <div className="hidden h-20 w-px bg-green-3/30 md:block" />
+
+            {/* Skills */}
+            <div className="flex flex-col items-center text-center md:flex-1">
+              <div className="text-5xl font-bold md:text-6xl">
+                <span className="bg-tabiya-green/30 px-2 text-oxford-blue">13,894</span>
+              </div>
+              <div className="mt-2 text-lg font-medium uppercase tracking-wider text-green-3">Skills</div>
+            </div>
+
+            {/* Divider */}
+            <div className="hidden h-20 w-px bg-green-3/30 md:block" />
+
+            {/* Occ-Skill Relations */}
+            <div className="flex flex-col items-center text-center md:flex-1">
+              <div className="text-5xl font-bold md:text-6xl">
+                <span className="bg-tabiya-green/30 px-2 text-oxford-blue">130,567</span>
+              </div>
+              <div className="mt-2 text-lg font-medium uppercase tracking-wider text-green-3">Occ-Skill Relations</div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Getting Started */}
-      <section>
-        <h2 className="mb-6 text-center text-2xl font-bold text-oxford-blue">Getting Started</h2>
-        <div className="mx-auto max-w-2xl">
-          <ol className="space-y-4">
-            <li className="flex gap-4">
-              <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-tabiya-green font-semibold text-oxford-blue">
-                1
-              </span>
-              <div>
-                <h3 className="font-semibold text-oxford-blue">Use the Explore tab</h3>
-                <p className="text-text-muted">
-                  Type natural language queries like "caring for elderly" or "growing vegetables" to
-                  find relevant occupations and skills.
+      {/* Feature Cards - Figma style with absolute positioned images */}
+      <section className="bg-soft-green py-16 md:py-24">
+        <div className="container-app">
+          <div className="grid gap-6 md:grid-cols-3">
+            {/* Card 1: Skills-first Taxonomy */}
+            <article className="relative h-[500px] md:h-[593px] overflow-hidden rounded-2xl bg-tabiya-gray">
+              <div className="p-6 md:p-8">
+                <h3 className="mb-2 text-lg md:text-xl font-semibold text-oxford-blue tracking-tight">
+                  Skills-first Taxonomy
+                </h3>
+                <p className="text-base md:text-lg font-medium leading-relaxed text-green-3">
+                  Traditional taxonomies start with job titles. We start with skills.
+                  By mapping the competencies people actually develop, whether through
+                  formal employment, self-employment, or unpaid work, we create pathways
+                  that recognize what people can do, not just what they've been paid to do.
                 </p>
               </div>
-            </li>
-            <li className="flex gap-4">
-              <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-tabiya-green font-semibold text-oxford-blue">
-                2
-              </span>
-              <div>
-                <h3 className="font-semibold text-oxford-blue">Browse the hierarchies</h3>
-                <p className="text-text-muted">
-                  Navigate through occupation and skill trees using the Occupations and Skills tabs
-                  to see how categories are organized.
+              {/* Absolute positioned image */}
+              <div className="absolute bottom-[-53px] left-1/2 -translate-x-1/2 w-[218px] md:w-[269px] h-[212px] md:h-[316px]">
+                <img
+                  src="/assets/images/about-skills-first.jpeg"
+                  alt="Skills-first taxonomy"
+                  className="absolute inset-0 w-full h-full object-cover rounded-[32px]"
+                />
+                <div className="absolute inset-0 rounded-[32px] border-8 border-soft-green shadow-lg" />
+              </div>
+            </article>
+
+            {/* Card 2: Inclusive of All Economic Activity */}
+            <article className="relative h-[500px] md:h-[593px] overflow-hidden rounded-2xl bg-tabiya-gray">
+              <div className="p-6 md:p-8">
+                <h3 className="mb-2 text-lg md:text-xl font-semibold text-oxford-blue tracking-tight">
+                  Inclusive of All Economic Activity
+                </h3>
+                <p className="text-base md:text-lg font-medium leading-relaxed text-green-3">
+                  Most labor market frameworks only capture paid, formal work.
+                  We've expanded the map to include the "unseen economy":
+                  caregiving, household management, volunteer work, and informal
+                  livelihoods that build real, transferable skills.{' '}
+                  <Link to={`/${lang}/explore?filter=unseen`} className="inline bg-tabiya-green px-1 text-oxford-blue font-semibold transition-colors hover:bg-oxford-blue hover:text-white">
+                    Explore Tabiya's Unseen Economy occupations and skills →
+                  </Link>
                 </p>
               </div>
-            </li>
-            <li className="flex gap-4">
-              <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-tabiya-green font-semibold text-oxford-blue">
-                3
-              </span>
-              <div>
-                <h3 className="font-semibold text-oxford-blue">Explore connections</h3>
-                <p className="text-text-muted">
-                  Click on any item to see its full details, including related skills for
-                  occupations and related occupations for skills.
+              {/* Absolute positioned image */}
+              <div className="absolute bottom-[-35px] left-1/2 -translate-x-1/2 w-[218px] md:w-[269px] h-[212px] md:h-[251px]">
+                <img
+                  src="/assets/images/about-inclusive.jpeg"
+                  alt="Inclusive economy"
+                  className="absolute inset-0 w-full h-full object-cover rounded-[32px]"
+                />
+                <div className="absolute inset-0 rounded-[32px] border-8 border-soft-green shadow-lg" />
+              </div>
+            </article>
+
+            {/* Card 3: Localizable to Any Context */}
+            <article className="relative h-[500px] md:h-[593px] overflow-hidden rounded-2xl bg-tabiya-gray">
+              <div className="p-6 md:p-8">
+                <h3 className="mb-2 text-lg md:text-xl font-semibold text-oxford-blue tracking-tight">
+                  Localizable to Any Context
+                </h3>
+                <p className="text-base md:text-lg font-medium leading-relaxed text-green-3">
+                  Labor markets differ. A useful taxonomy must adapt. Our open
+                  platform lets partners create localized versions that reflect
+                  regional job titles, local languages, and context-specific
+                  skills—while maintaining compatibility with global standards.{' '}
+                  <Link to={`/${lang}/explore?locale=za`} className="inline bg-tabiya-green px-1 text-oxford-blue font-semibold transition-colors hover:bg-oxford-blue hover:text-white">
+                    Explore the localized taxonomy developed for South Africa →
+                  </Link>
                 </p>
               </div>
-            </li>
-          </ol>
+              {/* Absolute positioned image */}
+              <div className="absolute bottom-[-11px] left-1/2 -translate-x-1/2 w-[180px] md:w-[240px] h-[180px] md:h-[200px]">
+                <img
+                  src="/assets/images/about-localizable.png"
+                  alt="Localizable taxonomy"
+                  className="absolute inset-0 w-full h-full object-cover rounded-[32px]"
+                />
+                <div className="absolute inset-[-4px] rounded-[36px] border-8 border-soft-green shadow-lg" />
+              </div>
+            </article>
+          </div>
         </div>
       </section>
+
     </div>
   );
 }

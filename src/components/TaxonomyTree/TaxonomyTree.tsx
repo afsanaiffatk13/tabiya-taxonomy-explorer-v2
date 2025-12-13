@@ -1,5 +1,5 @@
 import { memo, useCallback, useRef, KeyboardEvent } from 'react';
-import { Search, ChevronDown, ChevronRight } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Input } from '@components/ui';
 import { TreeNode } from './TreeNode';
 import type { TreeNode as TreeNodeType, TaxonomyData } from '@/types';
@@ -28,8 +28,8 @@ function TaxonomyTreeComponent({
   selectedId,
   onToggle,
   onSelect,
-  onExpandAll,
-  onCollapseAll,
+  onExpandAll: _onExpandAll,
+  onCollapseAll: _onCollapseAll,
   isLoading = false,
   emptyMessage = 'No items to display',
   searchValue = '',
@@ -88,30 +88,6 @@ function TaxonomyTreeComponent({
       <div className="flex flex-shrink-0 items-center justify-between gap-2">
         {title && <h2 className="font-semibold text-oxford-blue">{title}</h2>}
 
-        <div className="flex gap-1">
-          {onExpandAll && (
-            <button
-              type="button"
-              onClick={onExpandAll}
-              className="flex items-center gap-1 rounded px-2 py-1 text-xs text-text-muted transition-colors hover:bg-soft-green hover:text-green-3"
-              title="Expand all"
-            >
-              <ChevronDown className="h-3.5 w-3.5" />
-              Expand
-            </button>
-          )}
-          {onCollapseAll && (
-            <button
-              type="button"
-              onClick={onCollapseAll}
-              className="flex items-center gap-1 rounded px-2 py-1 text-xs text-text-muted transition-colors hover:bg-soft-green hover:text-green-3"
-              title="Collapse all"
-            >
-              <ChevronRight className="h-3.5 w-3.5" />
-              Collapse
-            </button>
-          )}
-        </div>
       </div>
 
       {/* Search */}

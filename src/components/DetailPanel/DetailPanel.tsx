@@ -6,7 +6,6 @@ import {
   BookOpen,
   Briefcase,
   MapPin,
-  ExternalLink,
   ChevronRight,
   ChevronDown,
 } from 'lucide-react';
@@ -119,12 +118,6 @@ function DetailPanelComponent({
   // Get type-specific fields
   const occupationType = isOccupation ? (item as Occupation).occupationType : null;
   const skillType = isSkill ? (item as Skill).skillType : null;
-  const scopeNote =
-    isOccupation || isSkill
-      ? (item as Occupation | Skill).scopeNote
-      : item.entityType === 'skillGroup'
-        ? (item as SkillGroup).scopeNote
-        : null;
 
   return (
     <div className="space-y-6">
@@ -183,27 +176,18 @@ function DetailPanelComponent({
       {/* Description */}
       {item.description && (
         <section>
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-text-muted">
+          <h2 className="mb-2 text-base font-semibold uppercase tracking-wide text-text-muted">
             Description
           </h2>
-          <p className="whitespace-pre-wrap text-oxford-blue">{item.description}</p>
+          <p className="whitespace-pre-wrap text-sm text-oxford-blue">{truncateToSentences(item.description, 2)}</p>
         </section>
       )}
 
-      {/* Scope Note */}
-      {scopeNote && (
-        <section>
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-text-muted">
-            Scope Note
-          </h2>
-          <p className="whitespace-pre-wrap text-oxford-blue">{scopeNote}</p>
-        </section>
-      )}
 
       {/* Alternative Labels */}
       {item.altLabels.length > 0 && (
         <section>
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-text-muted">
+          <h2 className="mb-2 text-base font-semibold uppercase tracking-wide text-text-muted">
             Alternative Names
           </h2>
           <div className="flex flex-wrap gap-2">
@@ -223,7 +207,7 @@ function DetailPanelComponent({
       {/* Related Skills (for occupations) */}
       {relatedSkills.length > 0 && (
         <section>
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-text-muted">
+          <h2 className="mb-2 text-base font-semibold uppercase tracking-wide text-text-muted">
             Related Skills ({relatedSkills.length})
           </h2>
           {/* Check if this is unseen economy (has signalling values) */}
@@ -233,7 +217,7 @@ function DetailPanelComponent({
               {/* High signalling */}
               {relatedSkills.filter(r => r.signallingValueLabel === 'high').length > 0 && (
                 <div className="border-l-4 border-blue-500 bg-gradient-to-r from-blue-50 to-transparent pl-4">
-                  <p className="mb-2 text-xs font-semibold text-blue-600">High Signalling Value</p>
+                  <p className="mb-2 text-sm font-semibold text-blue-600">High Signalling Value</p>
                   <ExpandableList
                     items={relatedSkills
                       .filter((r) => r.signallingValueLabel === 'high')
@@ -248,7 +232,7 @@ function DetailPanelComponent({
               {/* Medium signalling */}
               {relatedSkills.filter(r => r.signallingValueLabel === 'medium').length > 0 && (
                 <div className="border-l-4 border-green-500 bg-gradient-to-r from-green-50 to-transparent pl-4">
-                  <p className="mb-2 text-xs font-semibold text-green-600">Medium Signalling Value</p>
+                  <p className="mb-2 text-sm font-semibold text-green-600">Medium Signalling Value</p>
                   <ExpandableList
                     items={relatedSkills
                       .filter((r) => r.signallingValueLabel === 'medium')
@@ -263,7 +247,7 @@ function DetailPanelComponent({
               {/* Low signalling */}
               {relatedSkills.filter(r => r.signallingValueLabel === 'low').length > 0 && (
                 <div className="border-l-4 border-gray-400 bg-gradient-to-r from-gray-50 to-transparent pl-4">
-                  <p className="mb-2 text-xs font-semibold text-gray-600">Low Signalling Value</p>
+                  <p className="mb-2 text-sm font-semibold text-gray-600">Low Signalling Value</p>
                   <ExpandableList
                     items={relatedSkills
                       .filter((r) => r.signallingValueLabel === 'low')
@@ -281,7 +265,7 @@ function DetailPanelComponent({
               {/* Essential skills first */}
               {relatedSkills.filter(r => r.relationType === 'essential').length > 0 && (
                 <div>
-                  <p className="mb-2 text-xs font-medium text-green-3">Essential</p>
+                  <p className="mb-2 text-sm font-medium text-green-3">Essential</p>
                   <ExpandableList
                     items={relatedSkills
                       .filter((r) => r.relationType === 'essential')
@@ -296,7 +280,7 @@ function DetailPanelComponent({
               {/* Optional skills */}
               {relatedSkills.filter(r => r.relationType === 'optional').length > 0 && (
                 <div>
-                  <p className="mb-2 text-xs font-medium text-text-muted">Optional</p>
+                  <p className="mb-2 text-sm font-medium text-text-muted">Optional</p>
                   <ExpandableList
                     items={relatedSkills
                       .filter((r) => r.relationType === 'optional')
@@ -315,7 +299,7 @@ function DetailPanelComponent({
       {/* Related Occupations (for skills) */}
       {relatedOccupations.length > 0 && (
         <section>
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-text-muted">
+          <h2 className="mb-2 text-base font-semibold uppercase tracking-wide text-text-muted">
             Related Occupations ({relatedOccupations.length})
           </h2>
           <ExpandableList
@@ -333,7 +317,7 @@ function DetailPanelComponent({
       {/* Sub-groups for occupation groups */}
       {item.entityType === 'occupationGroup' && occupationGroupChildren.subGroups.length > 0 && (
         <section>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-text-muted">
+          <h2 className="mb-3 text-base font-semibold uppercase tracking-wide text-text-muted">
             Sub-groups ({occupationGroupChildren.subGroups.length})
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -355,7 +339,7 @@ function DetailPanelComponent({
       {/* Child occupations for occupation groups */}
       {item.entityType === 'occupationGroup' && occupationGroupChildren.occupations.length > 0 && (
         <section>
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-text-muted">
+          <h2 className="mb-2 text-base font-semibold uppercase tracking-wide text-text-muted">
             Occupations ({occupationGroupChildren.occupations.length})
           </h2>
           <ExpandableList
@@ -373,7 +357,7 @@ function DetailPanelComponent({
       {/* Sub-groups for skill groups */}
       {item.entityType === 'skillGroup' && skillGroupChildren.subGroups.length > 0 && (
         <section>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-text-muted">
+          <h2 className="mb-3 text-base font-semibold uppercase tracking-wide text-text-muted">
             Sub-groups ({skillGroupChildren.subGroups.length})
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -395,7 +379,7 @@ function DetailPanelComponent({
       {/* Child skills for skill groups */}
       {item.entityType === 'skillGroup' && skillGroupChildren.skills.length > 0 && (
         <section>
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-text-muted">
+          <h2 className="mb-2 text-base font-semibold uppercase tracking-wide text-text-muted">
             Skills ({skillGroupChildren.skills.length})
           </h2>
           <ExpandableList
@@ -413,26 +397,27 @@ function DetailPanelComponent({
   );
 }
 
-// Helper component for related item links
+// Helper component for related item links - inline style for comma-separated list
 interface RelatedItemLinkProps {
   id: string;
   label: string;
   type: 'occupation' | 'skill';
   onNavigate: (id: string, type: string) => void;
+  isLast?: boolean;
 }
 
-function RelatedItemLink({ id, label, type, onNavigate }: RelatedItemLinkProps) {
+function RelatedItemLink({ id, label, type, onNavigate, isLast = false }: RelatedItemLinkProps) {
   return (
-    <li>
+    <span className="inline">
       <button
         type="button"
         onClick={() => onNavigate(id, type)}
-        className="group flex items-center gap-1 text-left text-sm text-green-3 transition-colors hover:text-oxford-blue"
+        className="text-sm text-oxford-blue transition-colors hover:bg-tabiya-green hover:text-oxford-blue"
       >
-        <span className="group-hover:underline">{label}</span>
-        <ExternalLink className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
+        {label}
       </button>
-    </li>
+      {!isLast && <span className="text-oxford-blue">, </span>}
+    </span>
   );
 }
 
@@ -451,36 +436,37 @@ function ExpandableList({ items, type, onNavigate, initialCount = 15 }: Expandab
 
   return (
     <>
-      <ul className="space-y-1">
-        {displayedItems.map((item) => (
+      <div className="leading-relaxed">
+        {displayedItems.map((item, index) => (
           <RelatedItemLink
             key={item.id}
             id={item.id}
             label={item.label}
             type={type}
             onNavigate={onNavigate}
+            isLast={index === displayedItems.length - 1 && !hasMore}
           />
         ))}
-      </ul>
-      {hasMore && (
-        <button
-          type="button"
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="mt-2 flex items-center gap-1 text-xs font-medium text-green-3 transition-colors hover:text-oxford-blue"
-        >
-          {isExpanded ? (
-            <>
-              <ChevronDown className="h-3 w-3" />
-              Show less
-            </>
-          ) : (
-            <>
-              <ChevronRight className="h-3 w-3" />
-              Show {items.length - initialCount} more
-            </>
-          )}
-        </button>
-      )}
+        {hasMore && (
+          <button
+            type="button"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="ml-1 inline-flex items-center gap-1 text-xs font-medium text-green-3 transition-colors hover:text-oxford-blue"
+          >
+            {isExpanded ? (
+              <>
+                <ChevronDown className="h-3 w-3" />
+                Show less
+              </>
+            ) : (
+              <>
+                <ChevronRight className="h-3 w-3" />
+                +{items.length - initialCount} more
+              </>
+            )}
+          </button>
+        )}
+      </div>
     </>
   );
 }
@@ -515,6 +501,19 @@ function GroupCard({ id, code, label, description, type, onNavigate }: GroupCard
       )}
     </button>
   );
+}
+
+// Truncate description to a maximum number of sentences
+function truncateToSentences(text: string, maxSentences: number = 3): string {
+  // Match sentences ending with . ! or ?
+  const sentenceRegex = /[^.!?]*[.!?]+/g;
+  const sentences = text.match(sentenceRegex);
+
+  if (!sentences || sentences.length <= maxSentences) {
+    return text;
+  }
+
+  return sentences.slice(0, maxSentences).join('').trim();
 }
 
 // Format skill type for display
