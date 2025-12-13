@@ -1,4 +1,3 @@
-import { memo } from 'react';
 import type { GraphEdge, GraphNode } from './networkTypes';
 
 export interface NetworkEdgeProps {
@@ -39,8 +38,9 @@ function getOpacity(source: GraphNode, target: GraphNode): number {
 
 /**
  * A single edge (connection) between two nodes
+ * Note: Not using memo() because D3 mutates source/target node positions directly
  */
-export const NetworkEdge = memo(function NetworkEdge({ edge }: NetworkEdgeProps) {
+export function NetworkEdge({ edge }: NetworkEdgeProps) {
   // D3 mutates source/target to be node objects, not strings
   const source = edge.source as GraphNode;
   const target = edge.target as GraphNode;

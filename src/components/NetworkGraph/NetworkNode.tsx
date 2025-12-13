@@ -1,4 +1,3 @@
-import { memo } from 'react';
 import type { GraphNode } from './networkTypes';
 import { NODE_SIZES, NODE_OPACITIES, MIN_TOUCH_TARGET } from './networkTypes';
 
@@ -40,8 +39,10 @@ function getNodeBorder(node: GraphNode): string {
 
 /**
  * A single node in the network graph
+ * Note: Not using memo() because D3 mutates node.x/y directly
+ * and we need to re-render on each simulation tick
  */
-export const NetworkNode = memo(function NetworkNode({
+export function NetworkNode({
   node,
   onNodeClick,
   isHighlighted = false,
