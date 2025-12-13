@@ -36,19 +36,6 @@ export function NetworkLegend() {
         </div>
       </div>
 
-      {/* Distance explanation */}
-      <div className="flex items-center gap-4">
-        <span className="font-medium text-oxford-blue">Distance:</span>
-        <div className="flex items-center gap-1.5">
-          <div className="w-4 h-4 rounded-full bg-soft-green border-2 border-green-3 opacity-100" />
-          <span>Connected</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-gray-200 border border-gray-300 opacity-40" />
-          <span>2 hops</span>
-        </div>
-      </div>
-
       {/* Interaction hints */}
       <div className="text-gray-500 ml-auto">
         Click node to explore  |  Scroll to zoom  |  Drag to pan

@@ -6,7 +6,6 @@ import type {
   NodeType,
   EdgeType,
 } from './networkTypes';
-import { MAX_NODES } from './networkTypes';
 import type { TaxonomyData } from '@/types/taxonomy';
 import { getRelatedSkills, getRelatedOccupations } from '@/services/dataLoader';
 
@@ -181,99 +180,7 @@ function buildMockGraph(
     }
   }
 
-  // 3. Get distance-2 nodes (connections of connections)
-  const distance1Nodes = Array.from(nodes.values()).filter(
-    (n) => n.distance === 1
-  );
-
-  for (const d1Node of distance1Nodes) {
-    if (nodes.size >= MAX_NODES) break;
-
-    if (d1Node.type === 'skill') {
-      // Get occupations that use this skill
-      const relations = getMockSkillToOccupations(d1Node.id);
-      for (const rel of relations) {
-        if (nodes.size >= MAX_NODES) break;
-
-        // Skip if already in graph
-        if (nodes.has(rel.occId)) {
-          // Add edge if not already present
-          const edgeId = `${d1Node.id}-${rel.occId}`;
-          if (!edges.some((e) => e.id === edgeId)) {
-            edges.push({
-              id: edgeId,
-              source: d1Node.id,
-              target: rel.occId,
-              relationType: rel.relationType,
-              signallingValue: rel.signallingValue,
-            });
-          }
-          continue;
-        }
-
-        const occ = MOCK_OCCUPATIONS[rel.occId];
-        if (!occ) continue;
-
-        nodes.set(rel.occId, {
-          id: rel.occId,
-          code: occ.code,
-          label: occ.label,
-          type: 'occupation',
-          distance: 2,
-          signallingValue: rel.signallingValue,
-        });
-
-        edges.push({
-          id: `${d1Node.id}-${rel.occId}`,
-          source: d1Node.id,
-          target: rel.occId,
-          relationType: rel.relationType,
-          signallingValue: rel.signallingValue,
-        });
-      }
-    } else {
-      // Get skills for this occupation
-      const relations = MOCK_OCC_TO_SKILLS[d1Node.id] || [];
-      for (const rel of relations) {
-        if (nodes.size >= MAX_NODES) break;
-
-        // Skip if already in graph
-        if (nodes.has(rel.skillId)) {
-          const edgeId = `${d1Node.id}-${rel.skillId}`;
-          if (!edges.some((e) => e.id === edgeId)) {
-            edges.push({
-              id: edgeId,
-              source: d1Node.id,
-              target: rel.skillId,
-              relationType: rel.relationType,
-              signallingValue: rel.signallingValue,
-            });
-          }
-          continue;
-        }
-
-        const skill = MOCK_SKILLS[rel.skillId];
-        if (!skill) continue;
-
-        nodes.set(rel.skillId, {
-          id: rel.skillId,
-          code: skill.code,
-          label: skill.label,
-          type: 'skill',
-          distance: 2,
-          signallingValue: rel.signallingValue,
-        });
-
-        edges.push({
-          id: `${d1Node.id}-${rel.skillId}`,
-          source: d1Node.id,
-          target: rel.skillId,
-          relationType: rel.relationType,
-          signallingValue: rel.signallingValue,
-        });
-      }
-    }
-  }
+  // Simple star layout: only center + direct connections (no distance-2 nodes)
 
   return {
     nodes: Array.from(nodes.values()),
@@ -362,89 +269,7 @@ function buildGraphFromTaxonomy(
     }
   }
 
-  // 3. Get distance-2 nodes (limit to keep graph manageable)
-  const distance1Nodes = Array.from(nodes.values()).filter(
-    (n) => n.distance === 1
-  );
-
-  for (const d1Node of distance1Nodes) {
-    if (nodes.size >= MAX_NODES) break;
-
-    if (d1Node.type === 'skill') {
-      const relations = getRelatedOccupations(taxonomyData, d1Node.id);
-      for (const rel of relations.slice(0, 5)) {
-        // Limit per node
-        if (nodes.size >= MAX_NODES) break;
-
-        if (nodes.has(rel.occupation.id)) {
-          const edgeId = `${d1Node.id}-${rel.occupation.id}`;
-          if (!edges.some((e) => e.id === edgeId)) {
-            edges.push({
-              id: edgeId,
-              source: d1Node.id,
-              target: rel.occupation.id,
-              relationType: (rel.relationType || 'optional') as EdgeType,
-              signallingValue: rel.signallingValue ?? undefined,
-            });
-          }
-          continue;
-        }
-
-        nodes.set(rel.occupation.id, {
-          id: rel.occupation.id,
-          code: rel.occupation.code,
-          label: rel.occupation.preferredLabel,
-          type: 'occupation',
-          distance: 2,
-          signallingValue: rel.signallingValue ?? undefined,
-        });
-
-        edges.push({
-          id: `${d1Node.id}-${rel.occupation.id}`,
-          source: d1Node.id,
-          target: rel.occupation.id,
-          relationType: (rel.relationType || 'optional') as EdgeType,
-          signallingValue: rel.signallingValue ?? undefined,
-        });
-      }
-    } else {
-      const relations = getRelatedSkills(taxonomyData, d1Node.id);
-      for (const rel of relations.slice(0, 5)) {
-        if (nodes.size >= MAX_NODES) break;
-
-        if (nodes.has(rel.skill.id)) {
-          const edgeId = `${d1Node.id}-${rel.skill.id}`;
-          if (!edges.some((e) => e.id === edgeId)) {
-            edges.push({
-              id: edgeId,
-              source: d1Node.id,
-              target: rel.skill.id,
-              relationType: (rel.relationType || 'optional') as EdgeType,
-              signallingValue: rel.signallingValue ?? undefined,
-            });
-          }
-          continue;
-        }
-
-        nodes.set(rel.skill.id, {
-          id: rel.skill.id,
-          code: rel.skill.code,
-          label: rel.skill.preferredLabel,
-          type: 'skill',
-          distance: 2,
-          signallingValue: rel.signallingValue ?? undefined,
-        });
-
-        edges.push({
-          id: `${d1Node.id}-${rel.skill.id}`,
-          source: d1Node.id,
-          target: rel.skill.id,
-          relationType: (rel.relationType || 'optional') as EdgeType,
-          signallingValue: rel.signallingValue ?? undefined,
-        });
-      }
-    }
-  }
+  // Simple star layout: only center + direct connections (no distance-2 nodes)
 
   return {
     nodes: Array.from(nodes.values()),

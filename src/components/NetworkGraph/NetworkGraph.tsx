@@ -158,18 +158,10 @@ export function NetworkGraph({
             </div>
           </div>
           <div className="text-right text-sm text-text-muted">
-            <div>
-              <span className="font-medium text-oxford-blue">
-                {graphState.nodes.filter((n) => n.distance === 1).length}
-              </span>{' '}
-              direct connections
-            </div>
-            <div>
-              <span className="font-medium text-oxford-blue">
-                {graphState.nodes.filter((n) => n.distance === 2).length}
-              </span>{' '}
-              at 2 hops
-            </div>
+            <span className="font-medium text-oxford-blue">
+              {graphState.nodes.filter((n) => n.distance === 1).length}
+            </span>{' '}
+            related {graphState.centerNodeType === 'occupation' ? 'skills' : 'occupations'}
           </div>
         </div>
       </div>
