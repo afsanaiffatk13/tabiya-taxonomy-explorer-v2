@@ -265,4 +265,58 @@ This is a living document tracking key architectural and implementation decision
 
 ---
 
+## Decision #19
+**Date:** 2025-12-14
+**Decision:** Add network graph visualization for occupation-skill relationships
+**Context:** User wanted a more visual way to explore connections between occupations and skills on the Explore page
+**Choice:** Implement D3.js force-directed network graph that shows when clicking a search result
+**Rationale:**
+- Provides visual exploration of relationships
+- D3.js is the standard for force-directed layouts
+- Clicking a node recenters the graph for exploration
+**Impact:** New NetworkGraph component suite added; ExplorePage modified to show network view instead of navigating away
+
+---
+
+## Decision #20
+**Date:** 2025-12-14
+**Decision:** Simplify network graph to star layout (no 2-hop nodes)
+**Context:** Initial implementation with expand/prune behavior and 2-hop nodes was visually cluttered
+**Choice:** Remove distance-2 nodes; only show center node + direct connections
+**Rationale:**
+- Cleaner visualization
+- Fewer nodes = better performance
+- Still allows exploration by clicking connected nodes
+**Impact:** Reduced visual complexity; still considering further simplification to bipartite layout due to animation performance
+
+---
+
+## Decision #21
+**Date:** 2025-12-14
+**Decision:** Instant position calculation for network graph (no animation)
+**Context:** Force-directed graph animation was slow and staggered, making the UX poor
+**Choice:** Run D3 force simulation to completion synchronously (300 iterations in a loop) instead of animating frame-by-frame
+**Rationale:**
+- Animated simulation called `onTick` callback hundreds of times causing slow, staggered rendering
+- Running simulation synchronously with `tick()` in a loop calculates final positions instantly
+- Full labels now displayed outside/below nodes (small dots with text) instead of cramped inside circles
+- Larger collision radii account for labels + badges below nodes
+**Impact:** Network graph renders instantly with stable positions; full occupation/skill names visible
+
+---
+
+## Decision #22
+**Date:** 2025-12-14
+**Decision:** Use int8 quantized embedding model
+**Context:** The full-precision embedding model (all-MiniLM-L6-v2) was 90MB download
+**Choice:** Use int8 quantization via `{ dtype: 'q8' }` option when loading the model
+**Rationale:**
+- int8 model is only 23MB (75% reduction)
+- Embedding models are robust to quantization - minimal quality loss
+- Faster download = better UX on first visit
+- Model files are cached by browser after first download
+**Impact:** Model download reduced from ~90MB to ~23MB
+
+---
+
 <!-- NEW DECISIONS SHOULD BE APPENDED BELOW THIS LINE -->

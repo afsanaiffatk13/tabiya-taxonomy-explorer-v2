@@ -1,7 +1,6 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
 import * as d3 from 'd3';
 import type { GraphNode, GraphEdge } from './networkTypes';
-import { NODE_SIZES } from './networkTypes';
 
 export interface UseNetworkSimulationOptions {
   width: number;
@@ -21,24 +20,29 @@ export interface UseNetworkSimulationResult {
 }
 
 /**
- * Get the radius of a node based on its distance from center
+ * Get the collision radius of a node
+ * Now accounts for label text below the dot
  */
-function getNodeRadius(node: GraphNode): number {
-  const baseRadius = NODE_SIZES[node.distance] ?? NODE_SIZES[2] ?? 40;
-  // Scale slightly by signalling value if present
-  const scale = node.signallingValue ? 0.9 + node.signallingValue * 0.2 : 1;
-  return (baseRadius / 2) * scale;
+function getNodeCollisionRadius(node: GraphNode): number {
+  // Base collision radius includes space for label below dot
+  // Center node: larger label, code, and badge
+  // Distance 1: medium label and badge
+  // Distance 2: small label and badge
+  if (node.distance === 0) return 70;
+  if (node.distance === 1) return 55;
+  return 40;
 }
 
 /**
  * Hook that creates and manages a D3 force simulation
+ * Runs simulation to completion INSTANTLY (no animation) for better performance
  */
 export function useNetworkSimulation(
   nodes: GraphNode[],
   edges: GraphEdge[],
   options: UseNetworkSimulationOptions
 ): UseNetworkSimulationResult {
-  const { width, height, centerNodeId, onTick, onEnd } = options;
+  const { width, height, centerNodeId, onEnd } = options;
 
   const simulationRef = useRef<d3.Simulation<GraphNode, GraphEdge> | null>(
     null
@@ -116,10 +120,10 @@ export function useNetworkSimulation(
           return -150;
         })
       )
-      // Collision detection to prevent overlap
+      // Collision detection to prevent overlap (larger radius for labels)
       .force(
         'collision',
-        d3.forceCollide<GraphNode>().radius((d) => getNodeRadius(d) + 15)
+        d3.forceCollide<GraphNode>().radius((d) => getNodeCollisionRadius(d))
       )
       // Radial force to push distance-2 nodes outward
       .force(
@@ -154,19 +158,19 @@ export function useNetworkSimulation(
         }
       });
 
-    // Set up event handlers
-    simulation.on('tick', () => {
-      setIsRunning(true);
-      onTick?.();
-    });
+    // RUN SIMULATION TO COMPLETION INSTANTLY (no animation)
+    // This calculates all final positions synchronously
+    setIsRunning(true);
+    simulation.stop(); // Prevent automatic ticking
 
-    simulation.on('end', () => {
-      setIsRunning(false);
-      onEnd?.();
-    });
+    // Run simulation iterations manually until it cools down
+    const iterations = 300; // Enough iterations for convergence
+    for (let i = 0; i < iterations; i++) {
+      simulation.tick();
+    }
 
-    // Start with medium alpha for smooth animation
-    simulation.alpha(0.8).restart();
+    setIsRunning(false);
+    onEnd?.();
 
     simulationRef.current = simulation;
 
@@ -174,14 +178,20 @@ export function useNetworkSimulation(
     return () => {
       simulation.stop();
     };
-  }, [nodes, edges, width, height, centerNodeId, onTick, onEnd]);
+  }, [nodes, edges, width, height, centerNodeId, onEnd]);
 
   /**
-   * Reheat the simulation
+   * Reheat the simulation (runs instantly)
    */
   const reheat = useCallback(() => {
     if (simulationRef.current) {
-      simulationRef.current.alpha(0.5).restart();
+      setIsRunning(true);
+      simulationRef.current.alpha(0.5);
+      // Run to completion instantly
+      for (let i = 0; i < 150; i++) {
+        simulationRef.current.tick();
+      }
+      setIsRunning(false);
     }
   }, []);
 

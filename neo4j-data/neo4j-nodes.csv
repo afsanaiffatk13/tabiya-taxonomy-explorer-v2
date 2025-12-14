@@ -1,0 +1,51 @@
+id:ID,name,code,type,:LABEL
+occ-1,Crop Farmer,6111.1,seen,Occupation
+occ-2,Rice Farmer,6111.2,seen,Occupation
+occ-3,Wheat Farmer,6111.3,seen,Occupation
+occ-4,Vegetable Grower,6112.1,seen,Occupation
+occ-5,Gardener,6113.1,seen,Occupation
+occ-6,Livestock Farmer,6121.1,seen,Occupation
+occ-7,Poultry Farmer,6122.1,seen,Occupation
+occ-8,Dairy Farmer,6121.2,seen,Occupation
+occ-9,Software Developer,2512.1,seen,Occupation
+occ-10,Web Developer,2513.1,seen,Occupation
+occ-11,Data Analyst,2511.1,seen,Occupation
+occ-12,Caregiver (Elderly),I1.1,unseen,Occupation
+occ-13,Caregiver (Children),I1.2,unseen,Occupation
+occ-14,Home Manager,I2.1,unseen,Occupation
+occ-15,Community Volunteer,I3.1,unseen,Occupation
+occ-16,Chef,5120.1,seen,Occupation
+occ-17,Baker,7512.1,seen,Occupation
+occ-18,Waiter,5131.1,seen,Occupation
+occ-19,Nurse,2221.1,seen,Occupation
+occ-20,Teacher,2330.1,seen,Occupation
+skill-1,Soil Preparation,S1.1,technical,Skill
+skill-2,Planting Techniques,S1.2,technical,Skill
+skill-3,Irrigation Management,S1.3,technical,Skill
+skill-4,Harvest Techniques,S1.4,technical,Skill
+skill-5,Pest Control,S1.5,technical,Skill
+skill-6,Crop Rotation,S1.6,technical,Skill
+skill-7,Animal Husbandry,S2.1,technical,Skill
+skill-8,Animal Feeding,S2.2,technical,Skill
+skill-9,Milking Techniques,S2.3,technical,Skill
+skill-10,Programming Languages,S3.1,technical,Skill
+skill-11,Database Management,S3.2,technical,Skill
+skill-12,Web Technologies,S3.3,technical,Skill
+skill-13,Data Analysis,S3.4,technical,Skill
+skill-14,Machine Learning,S3.5,technical,Skill
+skill-15,Patient Care,S4.1,technical,Skill
+skill-16,Medication Administration,S4.2,technical,Skill
+skill-17,Elderly Care,S4.3,technical,Skill
+skill-18,Child Development,S4.4,technical,Skill
+skill-19,Communication,T1,transversal,Skill
+skill-20,Problem Solving,T2,transversal,Skill
+skill-21,Time Management,T3,transversal,Skill
+skill-22,Teamwork,T4,transversal,Skill
+skill-23,Leadership,T5,transversal,Skill
+skill-24,Cooking Techniques,S5.1,technical,Skill
+skill-25,Food Safety,S5.2,technical,Skill
+skill-26,Menu Planning,S5.3,technical,Skill
+skill-27,Baking,S5.4,technical,Skill
+skill-28,Customer Service,S6.1,technical,Skill
+skill-29,Teaching Methods,S7.1,technical,Skill
+skill-30,Curriculum Development,S7.2,technical,Skill

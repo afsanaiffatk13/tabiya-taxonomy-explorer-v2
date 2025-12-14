@@ -121,14 +121,15 @@ export async function initializeSemanticSearch(): Promise<void> {
 
     console.log('✓ Transformers library loaded');
 
-    // Step 2: Load embedding model (exact same as original)
-    updateStatus('loading-model', 'Loading AI model (80MB, one-time download)...', 30);
+    // Step 2: Load embedding model with int8 quantization (23MB instead of 90MB)
+    updateStatus('loading-model', 'Loading AI model (23MB, one-time download)...', 30);
 
-    console.log('Starting to load embedding model...');
+    console.log('Starting to load embedding model (int8 quantized)...');
 
     embeddingModel = await window.transformersPipeline(
       'feature-extraction',
-      'Xenova/all-MiniLM-L6-v2'
+      'Xenova/all-MiniLM-L6-v2',
+      { dtype: 'q8' }  // Use int8 quantization: 23MB vs 90MB full precision
     );
 
     console.log('✓ Embedding model loaded');

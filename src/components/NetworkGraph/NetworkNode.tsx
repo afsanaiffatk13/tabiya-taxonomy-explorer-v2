@@ -1,5 +1,5 @@
 import type { GraphNode } from './networkTypes';
-import { NODE_SIZES, NODE_OPACITIES, MIN_TOUCH_TARGET } from './networkTypes';
+import { NODE_OPACITIES, MIN_TOUCH_TARGET } from './networkTypes';
 
 export interface NetworkNodeProps {
   node: GraphNode;
@@ -8,19 +8,22 @@ export interface NetworkNodeProps {
 }
 
 /**
+ * Node sizes - smaller dots since labels are now outside
+ */
+const DOT_SIZES: Record<number, number> = {
+  0: 24,  // Center node dot
+  1: 18,  // Connected nodes
+  2: 12,  // Two hops away
+};
+
+/**
  * Get background color based on node type
  */
 function getNodeBackground(node: GraphNode): string {
-  if (node.distance === 0) {
-    // Center node - highlighted
-    return node.type === 'occupation' ? '#E4F8E2' : '#D7FFEF';
-  }
   if (node.distance === 2) {
-    // Faded nodes
-    return '#F3F4F6';
+    return '#9CA3AF'; // gray for faded
   }
-  // Distance 1 nodes
-  return node.type === 'occupation' ? '#E4F8E2' : '#D7FFEF';
+  return node.type === 'occupation' ? '#247066' : '#26B87D';
 }
 
 /**
@@ -28,27 +31,26 @@ function getNodeBackground(node: GraphNode): string {
  */
 function getNodeBorder(node: GraphNode): string {
   if (node.distance === 0) {
-    return '3px solid #247066';
+    return '3px solid #0D3D38';
   }
   if (node.distance === 2) {
-    return '1px solid #D1D5DB';
+    return '1px solid #6B7280';
   }
-  // Distance 1
-  return node.type === 'occupation' ? '2px solid #247066' : '2px solid #26B87D';
+  return '2px solid #0D3D38';
 }
 
 /**
  * A single node in the network graph
- * Note: Not using memo() because D3 mutates node.x/y directly
- * and we need to re-render on each simulation tick
+ * Shows a colored dot with full label text below
  */
 export function NetworkNode({
   node,
   onNodeClick,
   isHighlighted = false,
 }: NetworkNodeProps) {
-  const size = Math.max(NODE_SIZES[node.distance] ?? NODE_SIZES[2] ?? 40, MIN_TOUCH_TARGET);
-  const opacity = NODE_OPACITIES[node.distance] ?? NODE_OPACITIES[2];
+  const dotSize = DOT_SIZES[node.distance] ?? 12;
+  const opacity = NODE_OPACITIES[node.distance] ?? 0.4;
+  const touchTargetSize = Math.max(dotSize + 20, MIN_TOUCH_TARGET);
 
   // Don't render if no position
   if (node.x === undefined || node.y === undefined) {
@@ -68,78 +70,88 @@ export function NetworkNode({
     }
   };
 
-  // Determine if label should be visible
-  const showLabel = node.distance <= 1;
-  const labelSize = node.distance === 0 ? 'text-sm font-semibold' : 'text-xs';
+  // Label styling based on distance
+  const isCenter = node.distance === 0;
+  const isFaded = node.distance === 2;
+  const maxLabelWidth = isCenter ? 140 : 120;
 
   return (
     <div
       role="button"
-      tabIndex={node.distance === 0 ? -1 : 0}
-      aria-label={`${node.type}: ${node.label}${node.distance === 0 ? ' (center)' : ''}`}
+      tabIndex={isCenter ? -1 : 0}
+      aria-label={`${node.type}: ${node.label}${isCenter ? ' (center)' : ''}`}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       className={`
-        absolute flex items-center justify-center rounded-full
-        transition-all duration-300 ease-out
-        ${node.distance !== 0 ? 'cursor-pointer hover:scale-110 focus:outline-none focus:ring-2 focus:ring-tabiya-green focus:ring-offset-2' : ''}
-        ${isHighlighted ? 'ring-2 ring-tabiya-green ring-offset-2' : ''}
+        absolute flex flex-col items-center
+        ${!isCenter ? 'cursor-pointer focus:outline-none' : ''}
+        ${isHighlighted ? 'ring-2 ring-tabiya-green ring-offset-2 rounded' : ''}
       `}
       style={{
-        left: node.x - size / 2,
-        top: node.y - size / 2,
-        width: size,
-        height: size,
+        left: node.x,
+        top: node.y,
+        transform: 'translate(-50%, -50%)',
         opacity,
-        background: getNodeBackground(node),
-        border: getNodeBorder(node),
-        zIndex: node.distance === 0 ? 10 : node.distance === 1 ? 5 : 1,
+        zIndex: isCenter ? 10 : node.distance === 1 ? 5 : 1,
       }}
     >
-      {/* Node label */}
+      {/* Touch target area */}
       <div
         className={`
-          absolute pointer-events-none text-center
-          ${showLabel ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
-          transition-opacity duration-200
+          flex flex-col items-center
+          ${!isCenter ? 'hover:scale-105 transition-transform' : ''}
         `}
         style={{
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: size - 8,
-          maxHeight: size - 8,
-          overflow: 'hidden',
+          minWidth: touchTargetSize,
+          minHeight: touchTargetSize,
+          padding: '4px',
         }}
       >
-        <span
+        {/* Node dot */}
+        <div
+          className="rounded-full flex-shrink-0"
+          style={{
+            width: dotSize,
+            height: dotSize,
+            background: getNodeBackground(node),
+            border: getNodeBorder(node),
+            boxShadow: isCenter ? '0 2px 8px rgba(36, 112, 102, 0.4)' : '0 1px 3px rgba(0,0,0,0.2)',
+          }}
+        />
+
+        {/* Full label below node */}
+        <div
           className={`
-            ${labelSize} text-oxford-blue leading-tight
-            ${node.distance === 2 ? 'text-gray-500' : ''}
+            mt-1 text-center leading-tight
+            ${isCenter ? 'text-sm font-semibold text-oxford-blue' : ''}
+            ${!isCenter && !isFaded ? 'text-xs font-medium text-oxford-blue' : ''}
+            ${isFaded ? 'text-xs text-gray-500' : ''}
           `}
           style={{
-            display: '-webkit-box',
-            WebkitLineClamp: node.distance === 0 ? 3 : 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
+            maxWidth: maxLabelWidth,
             wordBreak: 'break-word',
           }}
         >
           {node.label}
-        </span>
-      </div>
+        </div>
 
-      {/* Type indicator dot */}
-      <div
-        className={`
-          absolute -bottom-1 -right-1 w-4 h-4 rounded-full
-          flex items-center justify-center text-[8px] font-bold
-          ${node.type === 'occupation' ? 'bg-green-3 text-white' : 'bg-green-2 text-white'}
-          ${node.distance === 2 ? 'opacity-50' : ''}
-        `}
-      >
-        {node.type === 'occupation' ? 'O' : 'S'}
+        {/* Code (only for center node) */}
+        {isCenter && (
+          <div className="text-xs text-text-muted font-mono mt-0.5">
+            {node.code}
+          </div>
+        )}
+
+        {/* Type badge */}
+        <div
+          className={`
+            mt-1 px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wide
+            ${node.type === 'occupation' ? 'bg-soft-green text-green-3' : 'bg-light-green text-tabiya-green'}
+            ${isFaded ? 'opacity-50' : ''}
+          `}
+        >
+          {node.type === 'occupation' ? 'Occ' : 'Skill'}
+        </div>
       </div>
     </div>
   );

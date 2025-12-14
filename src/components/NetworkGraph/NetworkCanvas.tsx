@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import * as d3 from 'd3';
 import type { GraphNode, GraphEdge } from './networkTypes';
 import { NetworkNode } from './NetworkNode';
@@ -34,17 +34,17 @@ export function NetworkCanvas({
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const [transform, setTransform] = useState<Transform>({ x: 0, y: 0, k: 1 });
-  const [, forceUpdate] = useState(0);
+  const [, forceRender] = useState(0);
 
-  // Set up D3 force simulation
-  const { isRunning } = useNetworkSimulation(nodes, edges, {
+  // Set up D3 force simulation - runs to completion INSTANTLY
+  useNetworkSimulation(nodes, edges, {
     width,
     height,
     centerNodeId,
-    onTick: useCallback(() => {
-      // Force re-render on each tick to update positions
-      forceUpdate((n) => n + 1);
-    }, []),
+    onEnd: () => {
+      // Force re-render once simulation completes to show final positions
+      forceRender((k) => k + 1);
+    },
   });
 
   // Set up zoom behavior
@@ -121,13 +121,10 @@ export function NetworkCanvas({
         </div>
       </div>
 
-      {/* Loading indicator while simulation is running */}
-      {isRunning && (
-        <div className="absolute top-4 right-4 flex items-center gap-2 text-sm text-text-muted">
-          <div className="w-2 h-2 bg-tabiya-green rounded-full animate-pulse" />
-          Arranging...
-        </div>
-      )}
+      {/* Hint for interaction */}
+      <div className="absolute top-4 right-4 text-xs text-text-muted">
+        Click a node to explore
+      </div>
     </div>
   );
 }
