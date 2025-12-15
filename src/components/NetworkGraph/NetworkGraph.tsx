@@ -53,7 +53,7 @@ export function NetworkGraph({
   }, []);
 
   // Initialize network data
-  const { graphState, recenter, goBack, canGoBack } = useNetworkData({
+  const { graphState, recenter, goBack, canGoBack, isLoading } = useNetworkData({
     initialNodeId: initialNode.id,
     initialNodeType: initialNode.type,
     initialNodeLabel: initialNode.label,
@@ -86,8 +86,8 @@ export function NetworkGraph({
     [graphState.history, goBack]
   );
 
-  // Show message if no connections
-  if (graphState.nodes.length <= 1) {
+  // Show message if no connections (only after loading is done)
+  if (!isLoading && graphState.nodes.length <= 1) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-8">
         <NetworkControls
@@ -117,7 +117,7 @@ export function NetworkGraph({
   const centralityScore = centerNode?.centrality;
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-6">
+    <div className="bg-white rounded-lg border border-gray-200 p-3 md:p-4">
       {/* Controls */}
       <NetworkControls
         history={graphState.history}
@@ -164,6 +164,7 @@ export function NetworkGraph({
           onNodeClick={handleNodeClick}
           width={dimensions.width}
           height={dimensions.height}
+          isDataLoading={isLoading}
         />
       </div>
     </div>

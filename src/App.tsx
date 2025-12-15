@@ -2,7 +2,6 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import DataProvider from '@components/DataProvider';
 import Layout from '@components/Layout';
 import AboutPage from '@pages/AboutPage';
-import ExplorePage from '@pages/ExplorePage';
 import OccupationsPage from '@pages/OccupationsPage';
 import SkillsPage from '@pages/SkillsPage';
 
@@ -15,7 +14,6 @@ function App() {
           <Route path=":lang">
             <Route index element={<Navigate to="about" replace />} />
             <Route path="about" element={<AboutPage />} />
-            <Route path="explore" element={<ExplorePage />} />
             <Route path="occupations/*" element={<OccupationsPage />} />
             <Route path="skills/*" element={<SkillsPage />} />
           </Route>

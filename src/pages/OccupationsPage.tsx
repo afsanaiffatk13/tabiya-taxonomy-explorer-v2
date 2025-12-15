@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
 import { NavLink, useParams, useNavigate } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import { Card, CardContent, TaxonomyTree, DetailPanel, LoadingState } from '@/components';
 import { NetworkGraph } from '@/components/NetworkGraph';
 import type { NodeType } from '@/components/NetworkGraph';
@@ -32,6 +33,16 @@ export default function OccupationsPage() {
 
   // Network view state
   const [networkViewNode, setNetworkViewNode] = useState<NetworkViewNode | null>(null);
+  const [isNetworkTransitioning, setIsNetworkTransitioning] = useState(false);
+
+  // Brief transition delay to show loading before NetworkGraph mounts
+  useEffect(() => {
+    if (networkViewNode) {
+      setIsNetworkTransitioning(true);
+      const timer = setTimeout(() => setIsNetworkTransitioning(false), 50);
+      return () => clearTimeout(timer);
+    }
+  }, [networkViewNode]);
 
   // Determine current sub-tab from URL
   const currentSubTab = useMemo(() => {
@@ -71,13 +82,18 @@ export default function OccupationsPage() {
   }, [selectedId, selectedType, taxonomyData]);
 
   // Handle tree node selection - simple store update, no URL
+  // When network view is open, clicking occupation closes network to show detail panel
   const handleSelect = useCallback(
     (id: string, type: TreeNode['entityType']) => {
       if (type === 'occupation' || type === 'occupationGroup') {
         selectItem(id, type);
+        // Close network view when selecting an occupation (not group)
+        if (type === 'occupation' && networkViewNode) {
+          setNetworkViewNode(null);
+        }
       }
     },
-    [selectItem]
+    [selectItem, networkViewNode]
   );
 
   // Handle navigation from detail panel
@@ -190,11 +206,22 @@ export default function OccupationsPage() {
               {/* Detail Panel or Network View */}
               <div className="lg:col-span-2">
                 {networkViewNode ? (
-                  <NetworkGraph
-                    initialNode={networkViewNode}
-                    taxonomyData={taxonomyData}
-                    onClose={handleCloseNetworkView}
-                  />
+                  isNetworkTransitioning ? (
+                    <Card className="flex h-[calc(100vh-300px)] flex-col">
+                      <CardContent className="flex flex-1 items-center justify-center">
+                        <div className="flex flex-col items-center gap-3">
+                          <Loader2 className="h-8 w-8 animate-spin text-green-3" />
+                          <p className="text-sm text-text-muted">Loading network view...</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <NetworkGraph
+                      initialNode={networkViewNode}
+                      taxonomyData={taxonomyData}
+                      onClose={handleCloseNetworkView}
+                    />
+                  )
                 ) : (
                   <Card className="flex h-[calc(100vh-300px)] flex-col">
                     <CardContent className="flex-1 overflow-y-auto">

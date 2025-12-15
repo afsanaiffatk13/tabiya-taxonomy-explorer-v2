@@ -47,6 +47,8 @@ export function useNetworkSimulation(
   );
   const [isRunning, setIsRunning] = useState(false);
   const lastNodeCountRef = useRef(0);
+  const lastCenterNodeRef = useRef('');
+  const lastDimensionsRef = useRef({ width: 0, height: 0 });
   const onEndRef = useRef(onEnd);
   onEndRef.current = onEnd;
 
@@ -57,11 +59,26 @@ export function useNetworkSimulation(
       return;
     }
 
-    // Skip if node count hasn't changed (avoid re-running on position updates)
-    if (nodes.length === lastNodeCountRef.current && simulationRef.current) {
+    // Check if dimensions changed significantly (more than 50px)
+    const dimensionsChanged =
+      Math.abs(width - lastDimensionsRef.current.width) > 50 ||
+      Math.abs(height - lastDimensionsRef.current.height) > 50;
+
+    // Check if center node changed (recenter operation)
+    const centerNodeChanged = centerNodeId !== lastCenterNodeRef.current;
+
+    // Skip if nothing significant changed
+    if (
+      nodes.length === lastNodeCountRef.current &&
+      !dimensionsChanged &&
+      !centerNodeChanged &&
+      simulationRef.current
+    ) {
       return;
     }
     lastNodeCountRef.current = nodes.length;
+    lastCenterNodeRef.current = centerNodeId;
+    lastDimensionsRef.current = { width, height };
 
     // Stop existing simulation
     if (simulationRef.current) {
@@ -72,9 +89,10 @@ export function useNetworkSimulation(
     const centerX = width / 2;
     const centerY = height / 2;
 
-    // Initialize node positions if not set
+    // Reset ALL node positions when dimensions or center node changes (important for proper centering)
+    // This ensures nodes are re-positioned for the new canvas size or new graph
     for (const node of nodes) {
-      if (node.x === undefined || node.y === undefined) {
+      if (dimensionsChanged || centerNodeChanged || node.x === undefined || node.y === undefined) {
         if (node.id === centerNodeId) {
           // Center node at center
           node.x = centerX;

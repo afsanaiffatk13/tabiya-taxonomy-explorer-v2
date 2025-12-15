@@ -495,15 +495,6 @@ export function useNetworkData(
 
       const newGraph = buildGraph(nodeId, clickedNode.type, taxonomyData, centralityData);
 
-      // Preserve positions for nodes that exist in both graphs
-      for (const newNode of newGraph.nodes) {
-        const oldNode = graphState.nodes.find((n) => n.id === newNode.id);
-        if (oldNode && oldNode.x !== undefined && oldNode.y !== undefined) {
-          newNode.x = oldNode.x;
-          newNode.y = oldNode.y;
-        }
-      }
-
       // Update navigation history
       newGraph.history = [
         ...graphState.history,

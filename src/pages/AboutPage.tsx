@@ -307,10 +307,7 @@ export default function AboutPage() {
                   Traditional taxonomies start with job titles. We start with skills.
                   By mapping the competencies people actually develop, whether through
                   formal employment, self-employment, or unpaid work, we create pathways
-                  that recognize what people can do, not just what they've been paid to do.{' '}
-                  <Link to={`/${lang}/explore?demo=skill`} className="inline bg-tabiya-green px-1 text-oxford-blue font-semibold transition-colors hover:bg-oxford-blue hover:text-white">
-                    See how skills connect across occupations →
-                  </Link>
+                  that recognize what people can do, not just what they've been paid to do.
                 </p>
               </div>
               {/* Absolute positioned image */}

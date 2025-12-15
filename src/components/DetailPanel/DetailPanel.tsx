@@ -8,6 +8,7 @@ import {
   MapPin,
   ChevronRight,
   ChevronDown,
+  Loader2,
 } from 'lucide-react';
 import { Tag } from '@components/ui';
 import { Breadcrumb } from './Breadcrumb';
@@ -78,6 +79,9 @@ function DetailPanelComponent({
     }
     return getSkillGroupChildren(taxonomyData, item.id);
   }, [item, taxonomyData]);
+
+  // Track when network CTA is clicked to show loading
+  const [isNetworkLoading, setIsNetworkLoading] = useState(false);
 
   // Loading state
   if (isLoading) {
@@ -180,16 +184,23 @@ function DetailPanelComponent({
         <div className="rounded-lg bg-soft-green p-4">
           <button
             type="button"
-            onClick={() => onShowNetwork(
-              item.id,
-              isOccupation ? 'occupation' : 'skill',
-              item.preferredLabel,
-              item.code
-            )}
+            onClick={() => {
+              setIsNetworkLoading(true);
+              onShowNetwork(
+                item.id,
+                isOccupation ? 'occupation' : 'skill',
+                item.preferredLabel,
+                item.code
+              );
+            }}
+            disabled={isNetworkLoading}
             className="inline text-sm font-medium leading-relaxed text-green-3"
           >
-            <span className="bg-tabiya-green px-1 text-oxford-blue transition-colors hover:bg-oxford-blue hover:text-white">
+            <span className="inline-flex items-center gap-2 bg-tabiya-green px-1 text-oxford-blue transition-colors hover:bg-oxford-blue hover:text-white">
               See how this {isOccupation ? 'occupation' : 'skill'} connects to the broader taxonomy →
+              {isNetworkLoading && (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              )}
             </span>
           </button>
         </div>
@@ -525,17 +536,18 @@ function GroupCard({ id, code, label, description, type, onNavigate }: GroupCard
   );
 }
 
-// Truncate description to a maximum number of sentences
-function truncateToSentences(text: string, maxSentences: number = 3): string {
-  // Match sentences ending with . ! or ?
-  const sentenceRegex = /[^.!?]*[.!?]+/g;
-  const sentences = text.match(sentenceRegex);
+// Truncate description before "Tasks include" or similar patterns
+function truncateToSentences(text: string, _maxSentences: number = 3): string {
+  // First, try to truncate before "Tasks include" or similar
+  const tasksPattern = /\s*Tasks include[^.]*\.?/i;
+  const tasksIndex = text.search(tasksPattern);
 
-  if (!sentences || sentences.length <= maxSentences) {
-    return text;
+  if (tasksIndex > 0) {
+    return text.substring(0, tasksIndex).trim();
   }
 
-  return sentences.slice(0, maxSentences).join('').trim();
+  // Fallback: return full text (no "Tasks include" found)
+  return text;
 }
 
 // Format skill type for display
