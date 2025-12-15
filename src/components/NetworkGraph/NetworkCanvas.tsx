@@ -47,13 +47,22 @@ export function NetworkCanvas({
   const svgRef = useRef<SVGSVGElement>(null);
   const [transform, setTransform] = useState<Transform>({ x: 0, y: 0, k: 1 });
   const [, forceRender] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isSimulationComplete, setIsSimulationComplete] = useState(false);
+  const prevNodeCountRef = useRef(0);
 
   // Pick a random loading message
   const loadingMessage = useMemo(
     () => LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)],
     []
   );
+
+  // Reset completion state when nodes change significantly
+  if (nodes.length !== prevNodeCountRef.current) {
+    prevNodeCountRef.current = nodes.length;
+    if (nodes.length > 0 && isSimulationComplete) {
+      setIsSimulationComplete(false);
+    }
+  }
 
   // Set up D3 force simulation - runs to completion INSTANTLY
   const { isRunning } = useNetworkSimulation(nodes, edges, {
@@ -63,16 +72,12 @@ export function NetworkCanvas({
     onEnd: () => {
       // Force re-render once simulation completes to show final positions
       forceRender((k) => k + 1);
-      setIsLoading(false);
+      setIsSimulationComplete(true);
     },
   });
 
-  // Reset loading state when nodes change significantly
-  useEffect(() => {
-    if (nodes.length > 0) {
-      setIsLoading(true);
-    }
-  }, [nodes.length]);
+  // Show loading when we have nodes but simulation hasn't completed yet
+  const isLoading = nodes.length > 0 && !isSimulationComplete;
 
   // Set up zoom behavior
   useEffect(() => {

@@ -224,6 +224,16 @@ export default function AboutPage() {
               )}
             </div>
 
+            {/* Status indicator */}
+            {isReady && !query && (
+              <div className="mb-4 text-center">
+                <span className="inline-flex items-center gap-1.5 text-xs text-green-3">
+                  <span className="h-2 w-2 rounded-full bg-green-3 animate-pulse" />
+                  AI semantic search ready!
+                </span>
+              </div>
+            )}
+
             {/* Example Queries - single line */}
             {!query && canSearch && (
               <div className="mb-6 flex flex-wrap items-center justify-center gap-2">
