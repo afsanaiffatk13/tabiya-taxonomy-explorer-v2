@@ -1,9 +1,8 @@
 import { NavLink, useParams, useLocation } from 'react-router-dom';
-import { Info, Search, Briefcase, Lightbulb } from 'lucide-react';
+import { Info, Briefcase, Lightbulb } from 'lucide-react';
 
 const tabs = [
   { id: 'about', label: 'About', icon: Info },
-  { id: 'explore', label: 'Explore', icon: Search },
   { id: 'occupations', label: 'Occupations', icon: Briefcase },
   { id: 'skills', label: 'Skills', icon: Lightbulb },
 ] as const;

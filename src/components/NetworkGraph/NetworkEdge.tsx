@@ -12,28 +12,23 @@ function getStrokeColor(relationType: 'essential' | 'optional'): string {
 }
 
 /**
- * Get stroke width based on relation type and signalling value
+ * Get stroke width based on distance - thicker for inner connections
  */
-function getStrokeWidth(
-  relationType: 'essential' | 'optional',
-  signallingValue?: number
-): number {
-  const base = relationType === 'essential' ? 2 : 1.5;
-  // Optionally scale by signalling value
-  if (signallingValue !== undefined) {
-    return base * (0.7 + signallingValue * 0.6);
-  }
-  return base;
+function getStrokeWidth(source: GraphNode, target: GraphNode): number {
+  const maxDistance = Math.max(source.distance, target.distance);
+  if (maxDistance <= 1) return 1.5;  // Distance 0-1: thicker
+  if (maxDistance === 2) return 0.8;
+  return 0.5;  // Distance 3: thinnest
 }
 
 /**
- * Get opacity based on connected nodes' distances
+ * Get opacity based on connected nodes' distances - more transparent for outer
  */
 function getOpacity(source: GraphNode, target: GraphNode): number {
   const maxDistance = Math.max(source.distance, target.distance);
-  if (maxDistance === 2) return 0.3;
-  if (maxDistance === 1) return 0.7;
-  return 1;
+  if (maxDistance <= 1) return 0.6;   // Distance 0-1: visible
+  if (maxDistance === 2) return 0.15; // Distance 2: quite transparent
+  return 0.08;  // Distance 3: very transparent
 }
 
 /**
@@ -56,7 +51,7 @@ export function NetworkEdge({ edge }: NetworkEdgeProps) {
   }
 
   const strokeColor = getStrokeColor(edge.relationType);
-  const strokeWidth = getStrokeWidth(edge.relationType, edge.signallingValue);
+  const strokeWidth = getStrokeWidth(source, target);
   const opacity = getOpacity(source, target);
 
   // Dash array for optional relations

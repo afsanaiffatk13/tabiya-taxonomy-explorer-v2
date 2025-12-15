@@ -7,6 +7,7 @@ export interface NetworkControlsProps {
   onHistoryClick: (index: number) => void;
   canGoBack: boolean;
   onGoBack: () => void;
+  hideBackButton?: boolean;
 }
 
 /**
@@ -18,24 +19,27 @@ export function NetworkControls({
   onHistoryClick,
   canGoBack,
   onGoBack,
+  hideBackButton = false,
 }: NetworkControlsProps) {
   return (
     <div className="flex flex-wrap items-center gap-4 mb-4">
-      {/* Back to Results button */}
-      <button
-        onClick={onClose}
-        className="
-          inline-flex items-center gap-2 px-4 py-2
-          text-sm font-medium text-oxford-blue
-          bg-white border border-gray-300 rounded-full
-          hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-tabiya-green
-          transition-colors duration-150
-          min-h-[44px]
-        "
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to Results
-      </button>
+      {/* Back to Results button - hidden when coming from demo/feature card */}
+      {!hideBackButton && (
+        <button
+          onClick={onClose}
+          className="
+            inline-flex items-center gap-2 px-4 py-2
+            text-sm font-medium text-oxford-blue
+            bg-white border border-gray-300 rounded-full
+            hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-tabiya-green
+            transition-colors duration-150
+            min-h-[44px]
+          "
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Results
+        </button>
+      )}
 
       {/* Go Back in History */}
       {canGoBack && (

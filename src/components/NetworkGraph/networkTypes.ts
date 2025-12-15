@@ -15,8 +15,12 @@ export interface GraphNode {
   type: NodeType;
   /** Distance from center: 0=center, 1=connected, 2=two hops away */
   distance: number;
-  /** Signalling value from relation (0-1), used for sizing */
+  /** Signalling value from relation (0-1) */
   signallingValue?: number;
+  /** Normalized centrality (0-1) for sizing */
+  centrality?: number;
+  /** Raw degree (connection count) for tooltip */
+  degree?: number;
   /** D3 simulation position */
   x?: number;
   y?: number;
@@ -44,6 +48,15 @@ export interface GraphEdge {
 }
 
 /**
+ * Truncation statistics for each distance level
+ */
+export interface TruncationStats {
+  dist1: { shown: number; total: number };
+  dist2: { shown: number; total: number };
+  dist3: { shown: number; total: number };
+}
+
+/**
  * Complete state of the network graph
  */
 export interface GraphState {
@@ -53,6 +66,10 @@ export interface GraphState {
   centerNodeType: NodeType;
   /** Navigation history for breadcrumb */
   history: HistoryEntry[];
+  /** Whether the graph was truncated due to node limits */
+  isTruncated?: boolean;
+  /** Statistics about truncation at each level */
+  truncationStats?: TruncationStats;
 }
 
 /**

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { Search, Sparkles, Loader2, Briefcase, BookOpen, X } from 'lucide-react';
 import { Input, Card, CardContent, Tag } from '@components/ui';
 import {
@@ -33,6 +33,7 @@ interface NetworkViewNode {
 export default function ExplorePage() {
   // Language param available for future i18n
   useParams<{ lang: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -46,9 +47,79 @@ export default function ExplorePage() {
 
   // Network view state - when set, shows the network graph instead of search results
   const [networkViewNode, setNetworkViewNode] = useState<NetworkViewNode | null>(null);
+  // Track if network view was opened from demo (feature card) - hides back button
+  const [isFromDemo, setIsFromDemo] = useState(false);
 
   // Get taxonomy data from store for network graph
   const taxonomyData = useAppStore((state) => state.taxonomyData);
+
+  // Check for URL params to auto-open network view
+  // Supports: ?demo=skill (picks a demo skill from taxonomy)
+  // Or: ?node=type:id:label (specific node)
+  useEffect(() => {
+    if (!taxonomyData) return;
+
+    const demoParam = searchParams.get('demo');
+    const nodeParam = searchParams.get('node');
+
+    if (demoParam === 'skill') {
+      // Pick a skill from the taxonomy for demo
+      // Find a common skill like "Teamwork" or just pick one
+      let demoSkill = null;
+      for (const [id, skill] of taxonomyData.skills) {
+        // Try to find a recognizable skill
+        if (skill.preferredLabel.toLowerCase().includes('teamwork') ||
+            skill.preferredLabel.toLowerCase().includes('communication') ||
+            skill.preferredLabel.toLowerCase().includes('planning')) {
+          demoSkill = { id, skill };
+          break;
+        }
+      }
+      // Fallback: just pick the 10th skill (arbitrary but likely interesting)
+      if (!demoSkill) {
+        const skillsArray = Array.from(taxonomyData.skills.entries());
+        if (skillsArray.length > 10) {
+          const entry = skillsArray[10];
+          if (entry) {
+            const [id, skill] = entry;
+            demoSkill = { id, skill };
+          }
+        }
+      }
+
+      if (demoSkill) {
+        setNetworkViewNode({
+          id: demoSkill.id,
+          type: 'skill',
+          label: demoSkill.skill.preferredLabel,
+          code: demoSkill.skill.code || '',
+        });
+        setIsFromDemo(true); // Hide back button for demo mode
+        // Clear the URL param
+        searchParams.delete('demo');
+        setSearchParams(searchParams, { replace: true });
+      }
+    } else if (nodeParam) {
+      // Format: type:id:label (e.g., skill:abc123:Teamwork)
+      const [type, id, ...labelParts] = nodeParam.split(':');
+      const label = labelParts.join(':');
+      if (type && id && label && (type === 'skill' || type === 'occupation')) {
+        // Look up the code from taxonomy data
+        let code = '';
+        if (type === 'skill') {
+          const skill = taxonomyData.skills.get(id);
+          code = skill?.code || '';
+        } else {
+          const occupation = taxonomyData.occupations.get(id);
+          code = occupation?.code || '';
+        }
+        setNetworkViewNode({ id, type: type as NodeType, label, code });
+        // Clear the URL param
+        searchParams.delete('node');
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+  }, [searchParams, setSearchParams, taxonomyData]);
 
   // Initialize semantic search when component mounts
   useEffect(() => {
@@ -133,7 +204,7 @@ export default function ExplorePage() {
           initialNode={networkViewNode}
           taxonomyData={taxonomyData}
           onClose={handleCloseNetworkView}
-          useMockData={!taxonomyData}
+          hideBackButton={isFromDemo}
         />
       </div>
     );

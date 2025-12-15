@@ -240,6 +240,7 @@ async function embedQuery(text: string): Promise<number[]> {
 
 /**
  * Search in a category (occupations or skills)
+ * Filters out groups - only returns individual occupations/skills
  */
 function searchInCategory(
   queryEmbedding: number[],
@@ -250,6 +251,11 @@ function searchInCategory(
   const results: SearchResult[] = [];
 
   for (const item of items) {
+    // Skip groups - only include individual occupations and skills
+    if (item.type === 'group' || item.type === 'skillgroup') {
+      continue;
+    }
+
     const similarity = cosineSimilarity(queryEmbedding, item.embedding);
     if (similarity >= minSimilarity) {
       results.push({

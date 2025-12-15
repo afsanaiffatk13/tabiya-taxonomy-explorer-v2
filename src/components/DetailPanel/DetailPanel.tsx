@@ -32,6 +32,7 @@ interface DetailPanelProps {
   item: Entity | null;
   taxonomyData: TaxonomyData | null;
   onNavigate: (id: string, type: string) => void;
+  onShowNetwork?: (id: string, type: 'occupation' | 'skill', label: string, code: string) => void;
   isLoading?: boolean;
 }
 
@@ -39,6 +40,7 @@ function DetailPanelComponent({
   item,
   taxonomyData,
   onNavigate,
+  onShowNetwork,
   isLoading = false,
 }: DetailPanelProps) {
   // Get breadcrumb path
@@ -172,6 +174,26 @@ function DetailPanelComponent({
           </div>
         </div>
       </div>
+
+      {/* Network CTA - only for occupations and skills (not groups) */}
+      {(isOccupation || isSkill) && onShowNetwork && (
+        <div className="rounded-lg bg-soft-green p-4">
+          <button
+            type="button"
+            onClick={() => onShowNetwork(
+              item.id,
+              isOccupation ? 'occupation' : 'skill',
+              item.preferredLabel,
+              item.code
+            )}
+            className="inline text-sm font-medium leading-relaxed text-green-3"
+          >
+            <span className="bg-tabiya-green px-1 text-oxford-blue transition-colors hover:bg-oxford-blue hover:text-white">
+              See how this {isOccupation ? 'occupation' : 'skill'} connects to the broader taxonomy →
+            </span>
+          </button>
+        </div>
+      )}
 
       {/* Description */}
       {item.description && (

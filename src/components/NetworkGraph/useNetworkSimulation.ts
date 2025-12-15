@@ -21,16 +21,14 @@ export interface UseNetworkSimulationResult {
 
 /**
  * Get the collision radius of a node
- * Now accounts for label text below the dot
+ * Accounts for label text below the dot
  */
 function getNodeCollisionRadius(node: GraphNode): number {
-  // Base collision radius includes space for label below dot
-  // Center node: larger label, code, and badge
-  // Distance 1: medium label and badge
-  // Distance 2: small label and badge
-  if (node.distance === 0) return 70;
-  if (node.distance === 1) return 55;
-  return 40;
+  // Collision radius by distance - decreasing for outer rings
+  if (node.distance === 0) return 70;  // Center node
+  if (node.distance === 1) return 55;  // First ring
+  if (node.distance === 2) return 40;  // Second ring
+  return 30;  // Distance 3: outermost ring, smallest
 }
 
 /**
@@ -48,6 +46,9 @@ export function useNetworkSimulation(
     null
   );
   const [isRunning, setIsRunning] = useState(false);
+  const lastNodeCountRef = useRef(0);
+  const onEndRef = useRef(onEnd);
+  onEndRef.current = onEnd;
 
   // Create/update simulation when inputs change
   useEffect(() => {
@@ -55,6 +56,12 @@ export function useNetworkSimulation(
     if (width <= 0 || height <= 0 || nodes.length === 0) {
       return;
     }
+
+    // Skip if node count hasn't changed (avoid re-running on position updates)
+    if (nodes.length === lastNodeCountRef.current && simulationRef.current) {
+      return;
+    }
+    lastNodeCountRef.current = nodes.length;
 
     // Stop existing simulation
     if (simulationRef.current) {
@@ -97,18 +104,14 @@ export function useNetworkSimulation(
     // Create the simulation
     const simulation = d3
       .forceSimulation<GraphNode>(nodes)
-      // Link force - pulls connected nodes together
+      // Link force - weak, let radial force dominate
       .force(
         'link',
         d3
           .forceLink<GraphNode, GraphEdge>(edges)
           .id((d) => d.id)
-          .distance((d) => {
-            // Shorter distance for essential relations
-            const base = 140;
-            return d.relationType === 'essential' ? base : base * 1.2;
-          })
-          .strength((d) => (d.relationType === 'essential' ? 0.7 : 0.4))
+          .distance(80)
+          .strength(0.1)  // Weak link force
       )
       // Repulsion between all nodes
       .force(
@@ -125,23 +128,25 @@ export function useNetworkSimulation(
         'collision',
         d3.forceCollide<GraphNode>().radius((d) => getNodeCollisionRadius(d))
       )
-      // Radial force to push distance-2 nodes outward
+      // Radial force to position nodes in clear concentric rings
       .force(
         'radial',
         d3
           .forceRadial<GraphNode>(
             (d) => {
+              const minDim = Math.min(width, height);
               if (d.distance === 0) return 0;
-              if (d.distance === 1) return Math.min(width, height) * 0.2;
-              return Math.min(width, height) * 0.35;
+              if (d.distance === 1) return minDim * 0.15;  // Inner ring
+              if (d.distance === 2) return minDim * 0.32;  // Middle ring
+              return minDim * 0.45;  // Outer ring (distance 3)
             },
             centerX,
             centerY
           )
           .strength((d) => {
+            // Very strong radial pull to maintain ring structure
             if (d.distance === 0) return 0;
-            if (d.distance === 2) return 0.3;
-            return 0.1;
+            return 0.9; // Same strong pull for all distances
           })
       )
       // Keep nodes within bounds
@@ -170,7 +175,7 @@ export function useNetworkSimulation(
     }
 
     setIsRunning(false);
-    onEnd?.();
+    onEndRef.current?.();
 
     simulationRef.current = simulation;
 
@@ -178,7 +183,7 @@ export function useNetworkSimulation(
     return () => {
       simulation.stop();
     };
-  }, [nodes, edges, width, height, centerNodeId, onEnd]);
+  }, [nodes, edges, width, height, centerNodeId]);
 
   /**
    * Reheat the simulation (runs instantly)

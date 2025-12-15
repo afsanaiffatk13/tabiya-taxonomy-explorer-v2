@@ -1,8 +1,18 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, TaxonomyTree, DetailPanel, LoadingState } from '@/components';
+import { NetworkGraph } from '@/components/NetworkGraph';
+import type { NodeType } from '@/components/NetworkGraph';
 import { useAppStore } from '@/store';
 import type { TreeNode } from '@/types';
+
+// Network view node type
+interface NetworkViewNode {
+  id: string;
+  type: NodeType;
+  label: string;
+  code: string;
+}
 
 export default function SkillsPage() {
   const { lang = 'en' } = useParams<{ lang: string }>();
@@ -14,6 +24,9 @@ export default function SkillsPage() {
 
   // Local state for tree filter
   const [treeFilter, setTreeFilter] = useState('');
+
+  // Network view state
+  const [networkViewNode, setNetworkViewNode] = useState<NetworkViewNode | null>(null);
 
   // Get more state from store
   const expandedNodes = useAppStore((state) => state.expandedNodes);
@@ -71,6 +84,19 @@ export default function SkillsPage() {
     [selectItem, expandToItem, navigate, lang]
   );
 
+  // Handle showing network view
+  const handleShowNetwork = useCallback(
+    (id: string, type: 'occupation' | 'skill', label: string, code: string) => {
+      setNetworkViewNode({ id, type, label, code });
+    },
+    []
+  );
+
+  // Close network view
+  const handleCloseNetworkView = useCallback(() => {
+    setNetworkViewNode(null);
+  }, []);
+
   // Expand all nodes (just top level for performance)
   const handleExpandAll = useCallback(() => {
     if (!treeNodes.length) return;
@@ -117,18 +143,27 @@ export default function SkillsPage() {
                 </Card>
               </div>
 
-              {/* Detail Panel */}
+              {/* Detail Panel or Network View */}
               <div className="lg:col-span-2">
-                <Card className="flex h-[calc(100vh-250px)] flex-col">
-                  <CardContent className="flex-1 overflow-y-auto">
-                    <DetailPanel
-                      item={selectedItem}
-                      taxonomyData={taxonomyData}
-                      onNavigate={handleNavigate}
-                      isLoading={isLoading}
-                    />
-                  </CardContent>
-                </Card>
+                {networkViewNode ? (
+                  <NetworkGraph
+                    initialNode={networkViewNode}
+                    taxonomyData={taxonomyData}
+                    onClose={handleCloseNetworkView}
+                  />
+                ) : (
+                  <Card className="flex h-[calc(100vh-250px)] flex-col">
+                    <CardContent className="flex-1 overflow-y-auto">
+                      <DetailPanel
+                        item={selectedItem}
+                        taxonomyData={taxonomyData}
+                        onNavigate={handleNavigate}
+                        onShowNetwork={handleShowNetwork}
+                        isLoading={isLoading}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </div>
           )}

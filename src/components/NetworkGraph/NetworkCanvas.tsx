@@ -1,9 +1,21 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useMemo } from 'react';
 import * as d3 from 'd3';
 import type { GraphNode, GraphEdge } from './networkTypes';
 import { NetworkNode } from './NetworkNode';
 import { NetworkEdge } from './NetworkEdge';
 import { useNetworkSimulation } from './useNetworkSimulation';
+
+// Fun loading messages like Claude's working states
+const LOADING_MESSAGES = [
+  'Mapping connections...',
+  'Weaving the skill web...',
+  'Connecting the dots...',
+  'Discovering pathways...',
+  'Building bridges...',
+  'Tracing relationships...',
+  'Untangling the network...',
+  'Finding hidden links...',
+];
 
 export interface NetworkCanvasProps {
   nodes: GraphNode[];
@@ -35,17 +47,32 @@ export function NetworkCanvas({
   const svgRef = useRef<SVGSVGElement>(null);
   const [transform, setTransform] = useState<Transform>({ x: 0, y: 0, k: 1 });
   const [, forceRender] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Pick a random loading message
+  const loadingMessage = useMemo(
+    () => LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)],
+    []
+  );
 
   // Set up D3 force simulation - runs to completion INSTANTLY
-  useNetworkSimulation(nodes, edges, {
+  const { isRunning } = useNetworkSimulation(nodes, edges, {
     width,
     height,
     centerNodeId,
     onEnd: () => {
       // Force re-render once simulation completes to show final positions
       forceRender((k) => k + 1);
+      setIsLoading(false);
     },
   });
+
+  // Reset loading state when nodes change significantly
+  useEffect(() => {
+    if (nodes.length > 0) {
+      setIsLoading(true);
+    }
+  }, [nodes.length]);
 
   // Set up zoom behavior
   useEffect(() => {
@@ -122,9 +149,27 @@ export function NetworkCanvas({
       </div>
 
       {/* Hint for interaction */}
-      <div className="absolute top-4 right-4 text-xs text-text-muted">
-        Click a node to explore
-      </div>
+      {!isLoading && (
+        <div className="absolute top-4 right-4 text-xs text-text-muted">
+          Click a node to explore
+        </div>
+      )}
+
+      {/* Loading overlay */}
+      {(isLoading || isRunning) && (
+        <div className="absolute inset-0 flex items-center justify-center bg-tabiya-gray/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3">
+            {/* Animated dots */}
+            <div className="flex gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-oxford-blue animate-bounce" style={{ animationDelay: '0ms' }} />
+              <div className="w-3 h-3 rounded-full bg-green-3 animate-bounce" style={{ animationDelay: '150ms' }} />
+              <div className="w-3 h-3 rounded-full bg-oxford-blue animate-bounce" style={{ animationDelay: '300ms' }} />
+            </div>
+            {/* Loading message */}
+            <p className="text-sm font-medium text-oxford-blue">{loadingMessage}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

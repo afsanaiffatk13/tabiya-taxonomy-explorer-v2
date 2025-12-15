@@ -15,8 +15,7 @@ export interface NetworkGraphProps {
   };
   taxonomyData?: TaxonomyData | null;
   onClose: () => void;
-  /** Use mock data for development/testing */
-  useMockData?: boolean;
+  hideBackButton?: boolean;
 }
 
 /**
@@ -26,7 +25,7 @@ export function NetworkGraph({
   initialNode,
   taxonomyData,
   onClose,
-  useMockData = false,
+  hideBackButton = false,
 }: NetworkGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 500 });
@@ -59,7 +58,6 @@ export function NetworkGraph({
     initialNodeType: initialNode.type,
     initialNodeLabel: initialNode.label,
     taxonomyData,
-    useMockData,
   });
 
   // Handle node click (recenter)
@@ -98,6 +96,7 @@ export function NetworkGraph({
           onHistoryClick={handleHistoryClick}
           canGoBack={canGoBack}
           onGoBack={goBack}
+          hideBackButton={hideBackButton}
         />
         <div className="text-center py-12">
           <div className="text-lg font-medium text-oxford-blue mb-2">
@@ -113,6 +112,10 @@ export function NetworkGraph({
     );
   }
 
+  // Get center node for centrality display
+  const centerNode = graphState.nodes.find(n => n.distance === 0);
+  const centralityScore = centerNode?.centrality;
+
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-6">
       {/* Controls */}
@@ -122,12 +125,37 @@ export function NetworkGraph({
         onHistoryClick={handleHistoryClick}
         canGoBack={canGoBack}
         onGoBack={goBack}
+        hideBackButton={hideBackButton}
       />
 
-      {/* Canvas container */}
+      {/* Current node info - ABOVE graph */}
+      <div className="mb-4 pb-4 border-b border-gray-200">
+        <div className="text-xs uppercase tracking-wide text-text-muted mb-1">
+          Currently viewing
+        </div>
+        <div className="text-lg font-semibold text-oxford-blue">
+          {graphState.history[graphState.history.length - 1]?.label}
+        </div>
+        <div className="text-sm text-text-muted mt-1">
+          {graphState.nodes.length} nodes | {graphState.edges.length} connections
+          {centralityScore !== undefined && (
+            <> | Centrality: {(centralityScore * 100).toFixed(0)}%</>
+          )}
+        </div>
+        {/* Truncation notice - left aligned, orange color */}
+        {graphState.isTruncated && (
+          <div className="text-xs text-orange-600 mt-1">
+            Showing top connections. For complete list, explore the tree.
+          </div>
+        )}
+        {/* Legend - moved above graph */}
+        <NetworkLegend />
+      </div>
+
+      {/* Canvas container - full width */}
       <div
         ref={containerRef}
-        className="relative border border-gray-200 rounded-lg overflow-hidden"
+        className="relative border border-gray-200 rounded-lg overflow-hidden w-full"
       >
         <NetworkCanvas
           nodes={graphState.nodes}
@@ -137,33 +165,6 @@ export function NetworkGraph({
           width={dimensions.width}
           height={dimensions.height}
         />
-      </div>
-
-      {/* Legend */}
-      <NetworkLegend />
-
-      {/* Current node info */}
-      <div className="mt-4 pt-4 border-t border-gray-200">
-        <div className="flex items-start gap-4">
-          <div className="flex-1">
-            <div className="text-xs uppercase tracking-wide text-text-muted mb-1">
-              Currently viewing
-            </div>
-            <div className="text-lg font-semibold text-oxford-blue">
-              {graphState.history[graphState.history.length - 1]?.label}
-            </div>
-            <div className="text-sm text-text-muted mt-1">
-              {graphState.nodes.length} nodes  |{' '}
-              {graphState.edges.length} connections
-            </div>
-          </div>
-          <div className="text-right text-sm text-text-muted">
-            <span className="font-medium text-oxford-blue">
-              {graphState.nodes.filter((n) => n.distance === 1).length}
-            </span>{' '}
-            related {graphState.centerNodeType === 'occupation' ? 'skills' : 'occupations'}
-          </div>
-        </div>
       </div>
     </div>
   );
