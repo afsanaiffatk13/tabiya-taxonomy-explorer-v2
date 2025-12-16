@@ -1,6 +1,9 @@
 import { useEffect, type ReactNode } from 'react';
 import { useAppStore } from '@/store';
-import { loadTaxonomyData } from '@/services';
+import { loadTaxonomyData, loadTaxonomyDataFromSupabase } from '@/services';
+
+// Feature flag: Set to true to use Supabase, false to use CSV files
+const USE_SUPABASE = true;
 
 interface DataProviderProps {
   children: ReactNode;
@@ -30,14 +33,18 @@ function startBackgroundLoad(): void {
   isLoadStarted = true;
 
   const { language, localization } = store;
-  console.log(`[DataProvider] Starting background data load for ${language}/${localization}...`);
+  const source = USE_SUPABASE ? 'Supabase' : 'CSV';
+  console.log(`[DataProvider] Starting background data load from ${source} for ${language}/${localization}...`);
 
   store.setIsLoading(true);
 
   // Now do the async work
   (async () => {
     try {
-      const data = await loadTaxonomyData(language, localization);
+      // Use Supabase or CSV based on feature flag
+      const data = USE_SUPABASE
+        ? await loadTaxonomyDataFromSupabase(language, localization)
+        : await loadTaxonomyData(language, localization);
 
       console.log('[DataProvider] Data loaded successfully:', {
         occupations: data.occupations.size,
