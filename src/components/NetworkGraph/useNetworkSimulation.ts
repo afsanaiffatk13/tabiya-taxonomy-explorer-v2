@@ -187,7 +187,9 @@ export function useNetworkSimulation(
     simulation.stop(); // Prevent automatic ticking
 
     // Run simulation iterations manually until it cools down
-    const iterations = 300; // Enough iterations for convergence
+    // Adaptive iterations: fewer nodes need fewer iterations for convergence
+    const iterations = nodes.length < 50 ? 150 :
+                       nodes.length < 100 ? 200 : 250;
     for (let i = 0; i < iterations; i++) {
       simulation.tick();
     }

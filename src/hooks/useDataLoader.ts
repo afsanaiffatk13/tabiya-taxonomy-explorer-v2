@@ -1,6 +1,9 @@
 import { useEffect } from 'react';
 import { useAppStore } from '@/store';
-import { loadTaxonomyData } from '@/services';
+import { loadTaxonomyData, loadTaxonomyDataFromSupabase } from '@/services';
+
+// Feature flag: Set to true to use Supabase, false to use CSV files
+const USE_SUPABASE = true;
 
 export function useDataLoader() {
   const language = useAppStore((state) => state.language);
@@ -19,14 +22,18 @@ export function useDataLoader() {
     let cancelled = false;
 
     const loadData = async () => {
-      console.log('[useDataLoader] Starting data load from /data/base/' + language);
+      const source = USE_SUPABASE ? 'Supabase' : 'CSV';
+      console.log(`[useDataLoader] Starting data load from ${source}`);
 
       const { setIsLoading, setError, setTaxonomyData, setDataLoaded } = useAppStore.getState();
       setIsLoading(true);
       setError(null);
 
       try {
-        const data = await loadTaxonomyData(language, localization);
+        // Use Supabase or CSV based on feature flag
+        const data = USE_SUPABASE
+          ? await loadTaxonomyDataFromSupabase(language, localization)
+          : await loadTaxonomyData(language, localization);
 
         // Check cancelled AFTER async operation
         if (cancelled) {

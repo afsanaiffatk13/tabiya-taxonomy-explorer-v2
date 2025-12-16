@@ -114,60 +114,9 @@ async function fetchCSV<T>(url: string): Promise<T[]> {
 // GitHub raw URL base for remote data
 const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/tabiya-tech/taxonomy-model-application/main/data-sets/csv';
 
-// Cache for detected version folder
-let versionCache: string | null = null;
-let versionCacheTime = 0;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
-// Clear cache on HMR (for development)
-if (import.meta.hot) {
-  import.meta.hot.accept(() => {
-    versionCache = null;
-    versionCacheTime = 0;
-  });
-}
-
-// Detect the latest Tabiya ESCO version folder from GitHub
-async function detectLatestVersion(): Promise<string> {
-  const now = Date.now();
-  if (versionCache && (now - versionCacheTime) < CACHE_DURATION) {
-    return versionCache;
-  }
-
-  try {
-    const apiUrl = 'https://api.github.com/repos/tabiya-tech/taxonomy-model-application/contents/data-sets/csv';
-    const response = await fetch(apiUrl);
-    if (!response.ok) {
-      throw new Error('Failed to fetch version info');
-    }
-    const folders = await response.json();
-
-    // Find Tabiya ESCO folders (format: "tabiya-esco-X.X.X vX.X.X")
-    // These contain the full taxonomy including unseen economy (ICATUS) data
-    const tabiyaFolders = folders
-      .filter((f: { type: string; name: string }) =>
-        f.type === 'dir' &&
-        f.name.startsWith('tabiya-esco-') &&
-        !f.name.includes('(') // Exclude language-specific
-      )
-      .map((f: { name: string }) => f.name)
-      .sort((a: string, b: string) => b.localeCompare(a, undefined, { numeric: true }));
-
-    console.log('[detectLatestVersion] Found Tabiya ESCO folders:', tabiyaFolders);
-
-    if (tabiyaFolders.length > 0) {
-      versionCache = tabiyaFolders[0] as string;
-      versionCacheTime = now;
-      console.log(`[detectLatestVersion] Using version: ${versionCache}`);
-      return versionCache!;
-    }
-  } catch (error) {
-    console.warn('[detectLatestVersion] Failed to detect version, using fallback:', error);
-  }
-
-  // Fallback to known working version with unseen economy data
-  return 'tabiya-esco-1.1.1 v2.0.1';
-}
+// Hardcoded taxonomy version for faster startup (no GitHub API call needed)
+// Update this when a new version is released
+const TAXONOMY_VERSION = 'tabiya-esco-1.1.1 v2.0.1';
 
 // Get the base path for data files
 async function getDataPath(lang: Language, loc: Localization): Promise<string> {
@@ -181,8 +130,7 @@ async function getDataPath(lang: Language, loc: Localization): Promise<string> {
   }
 
   // For English base data, use GitHub raw URLs for fast loading
-  const version = await detectLatestVersion();
-  return `${GITHUB_RAW_BASE}/${encodeURIComponent(version)}`;
+  return `${GITHUB_RAW_BASE}/${encodeURIComponent(TAXONOMY_VERSION)}`;
 }
 
 // Transform occupation row to Occupation entity

@@ -312,11 +312,15 @@ export default function AboutPage() {
               </div>
               {/* Absolute positioned image */}
               <div className="absolute bottom-[-53px] left-1/2 -translate-x-1/2 w-[218px] md:w-[269px] h-[212px] md:h-[316px]">
-                <img
-                  src="/assets/images/about-skills-first.jpeg"
-                  alt="Skills-first taxonomy"
-                  className="absolute inset-0 w-full h-full object-cover rounded-[32px]"
-                />
+                <picture>
+                  <source srcSet="/assets/images/about-skills-first.webp" type="image/webp" />
+                  <img
+                    src="/assets/images/about-skills-first.jpeg"
+                    alt="Skills-first taxonomy"
+                    loading="lazy"
+                    className="absolute inset-0 w-full h-full object-cover rounded-[32px]"
+                  />
+                </picture>
                 <div className="absolute inset-0 rounded-[32px] border-8 border-soft-green shadow-lg" />
               </div>
             </article>
@@ -339,11 +343,15 @@ export default function AboutPage() {
               </div>
               {/* Absolute positioned image */}
               <div className="absolute bottom-[-35px] left-1/2 -translate-x-1/2 w-[218px] md:w-[269px] h-[212px] md:h-[251px]">
-                <img
-                  src="/assets/images/about-inclusive.jpeg"
-                  alt="Inclusive economy"
-                  className="absolute inset-0 w-full h-full object-cover rounded-[32px]"
-                />
+                <picture>
+                  <source srcSet="/assets/images/about-inclusive.webp" type="image/webp" />
+                  <img
+                    src="/assets/images/about-inclusive.jpeg"
+                    alt="Inclusive economy"
+                    loading="lazy"
+                    className="absolute inset-0 w-full h-full object-cover rounded-[32px]"
+                  />
+                </picture>
                 <div className="absolute inset-0 rounded-[32px] border-8 border-soft-green shadow-lg" />
               </div>
             </article>
@@ -366,11 +374,15 @@ export default function AboutPage() {
               </div>
               {/* Absolute positioned image */}
               <div className="absolute bottom-[-11px] left-1/2 -translate-x-1/2 w-[180px] md:w-[240px] h-[180px] md:h-[200px]">
-                <img
-                  src="/assets/images/about-localizable.png"
-                  alt="Localizable taxonomy"
-                  className="absolute inset-0 w-full h-full object-cover rounded-[32px]"
-                />
+                <picture>
+                  <source srcSet="/assets/images/about-localizable.webp" type="image/webp" />
+                  <img
+                    src="/assets/images/about-localizable.png"
+                    alt="Localizable taxonomy"
+                    loading="lazy"
+                    className="absolute inset-0 w-full h-full object-cover rounded-[32px]"
+                  />
+                </picture>
                 <div className="absolute inset-[-4px] rounded-[36px] border-8 border-soft-green shadow-lg" />
               </div>
             </article>

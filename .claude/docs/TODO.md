@@ -65,6 +65,7 @@ This document tracks development progress across all phases. Update status as ta
 | [x] | Create lookup maps (id→item, code→item) |
 | [x] | Load data from GitHub CDN (Decision #15) |
 | [x] | Implement lazy tree child loading (Decision #16) |
+| [x] | **Supabase API integration (Decision #24)** |
 
 ### URL Routing
 | Status | Task |
@@ -98,6 +99,8 @@ This document tracks development progress across all phases. Update status as ta
 | [ ] | Show child items |
 | [x] | Show related skills (for occupations) |
 | [x] | Show related occupations (for skills) |
+| [x] | Add network graph CTA with loading spinner |
+| [x] | Truncate descriptions before "Tasks include..." |
 
 ### Page Implementation
 | Status | Task |
@@ -108,6 +111,7 @@ This document tracks development progress across all phases. Update status as ta
 | [x] | Wire up tab navigation |
 | [x] | Wire up Occupations page with real data |
 | [x] | Wire up Skills page with real data |
+| [x] | Remove ExplorePage (consolidated into tree pages) |
 
 ---
 
@@ -134,15 +138,15 @@ This document tracks development progress across all phases. Update status as ta
 | [x] | Add LRU cache for query embeddings |
 | [x] | Show "AI Search Ready" status indicator |
 
-### Explore Page
+### Network Graph Visualization
 | Status | Task |
 |--------|------|
-| [x] | Create Explore page layout |
-| [x] | Implement search mode toggle (keyword/semantic) |
-| [x] | Display categorized results (occupations/skills) |
-| [x] | Add suggestion chips |
-| [x] | Handle empty states |
-| [x] | Navigate to item on result click |
+| [x] | D3.js force-directed network graph (Decision #19) |
+| [x] | Simplified star layout (Decision #20) |
+| [x] | Instant position calculation (Decision #21) |
+| [x] | Fix graph centering on recenter operations |
+| [x] | Auto-fit graph to viewport (removed pan/zoom) |
+| [x] | Loading indicators for transitions |
 
 ---
 
@@ -187,6 +191,10 @@ This document tracks development progress across all phases. Update status as ta
 | [ ] | Add resource hints (preload, prefetch) |
 | [ ] | Implement skeleton loading states |
 | [ ] | Profile and fix render performance issues |
+| [x] | Convert images to WebP (Decision #23) |
+| [x] | Hardcode taxonomy version (Decision #23) |
+| [x] | Adaptive D3 simulation iterations (Decision #23) |
+| [x] | Supabase backend for on-demand data loading (Decision #24) |
 
 ### Accessibility
 | Status | Task |
@@ -260,7 +268,27 @@ This document tracks development progress across all phases. Update status as ta
 | [ ] | Add data visualization (skill distribution charts) |
 | [ ] | Create embeddable widget version |
 | [ ] | Add share functionality (social, copy link) |
+| [ ] | IndexedDB caching for returning users |
+| [ ] | Service worker for offline support |
+| [ ] | Progressive CSV loading (if not using Supabase) |
 
 ---
 
-**Last Updated:** 2025-12-11 (Phase 3 complete - AI semantic search working on Vercel, deep linking needs re-implementation)
+## Supabase Integration (Complete)
+
+| Status | Task |
+|--------|------|
+| [x] | Create Supabase database schema |
+| [x] | Create CSV transformation script |
+| [x] | Prepare CSV data for import |
+| [x] | Import data to Supabase (173K rows) |
+| [x] | Install Supabase client library |
+| [x] | Create Supabase client service |
+| [x] | Create Supabase data loader |
+| [x] | Update app to use Supabase API |
+| [x] | Test and verify integration |
+| [ ] | Set up pgvector for semantic search (optional) |
+
+---
+
+**Last Updated:** 2025-12-16 (Supabase integration complete - app now loads from Supabase by default)
