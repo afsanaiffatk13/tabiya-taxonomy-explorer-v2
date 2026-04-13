@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { Card, CardContent, TaxonomyTree, DetailPanel, LoadingState } from '@/components';
+import LocalizationPicker from '@/components/LocalizationPicker';
 import { NetworkGraph } from '@/components/NetworkGraph';
 import type { NodeType } from '@/components/NetworkGraph';
 import { useAppStore } from '@/store';
@@ -124,6 +125,15 @@ export default function SkillsPage() {
 
   return (
     <div className="flex min-h-[calc(100vh-200px)] flex-col">
+      {/* Sub-tabs ribbon */}
+      <div className="border-b border-gray-200 bg-white">
+        <div className="container-app">
+          <div className="flex items-center">
+            <LocalizationPicker />
+          </div>
+        </div>
+      </div>
+
       {/* Main Content Area */}
       <div className="flex-1 bg-tabiya-gray">
         <div className="container-app py-8">

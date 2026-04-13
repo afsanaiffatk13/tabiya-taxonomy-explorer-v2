@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Search, Loader2, X, Briefcase, BookOpen } from 'lucide-react';
 import { Input } from '@components/ui';
+import LocalizationPicker from '@/components/LocalizationPicker';
 import {
   initializeSemanticSearch,
   search,
@@ -112,6 +113,15 @@ export default function AboutPage() {
 
   return (
     <div className="bg-white">
+      {/* Sub-tabs ribbon */}
+      <div className="border-b border-gray-200 bg-white">
+        <div className="container-app">
+          <div className="flex items-center">
+            <LocalizationPicker />
+          </div>
+        </div>
+      </div>
+
       {/* Hero Section */}
       <section className="bg-soft-green px-6 py-6 md:px-16 md:py-10">
         <div className="mx-auto flex max-w-[854px] flex-col items-center gap-4 text-center md:gap-6">

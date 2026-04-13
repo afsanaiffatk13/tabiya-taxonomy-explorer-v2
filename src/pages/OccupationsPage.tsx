@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState, useEffect } from 'react';
 import { NavLink, useParams, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { Card, CardContent, TaxonomyTree, DetailPanel, LoadingState } from '@/components';
+import LocalizationPicker from '@/components/LocalizationPicker';
 import { NetworkGraph } from '@/components/NetworkGraph';
 import type { NodeType } from '@/components/NetworkGraph';
 import { useAppStore } from '@/store';
@@ -140,7 +141,7 @@ export default function OccupationsPage() {
       {/* Sub-tabs */}
       <div className="border-b border-gray-200 bg-white">
         <div className="container-app">
-          <div className="flex gap-1" role="tablist">
+          <div className="flex items-center gap-1" role="tablist">
             {subTabs.map(({ id, label }) => (
               <NavLink
                 key={id}
@@ -160,6 +161,7 @@ export default function OccupationsPage() {
                 {label}
               </NavLink>
             ))}
+            <LocalizationPicker />
           </div>
         </div>
       </div>
