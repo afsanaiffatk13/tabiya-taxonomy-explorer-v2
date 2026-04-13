@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Globe } from 'lucide-react';
 import { useAppStore } from '@/store';
 import type { Localization } from '@/types';
 
-const LOCALIZATIONS: { id: Localization; label: string; flag?: string }[] = [
-  { id: 'global', label: 'Global (ESCO)' },
-  { id: 'za', label: 'South Africa', flag: '🇿🇦' },
-  { id: 'ke', label: 'Kenya', flag: '🇰🇪' },
-  { id: 'zm', label: 'Zambia', flag: '🇿🇲' },
+const LOCALIZATIONS: { id: Localization; label: string; shortCode: string; flag?: string }[] = [
+  { id: 'global', label: 'Global', shortCode: 'ESCO' },
+  { id: 'za', label: 'South Africa', shortCode: 'ZA', flag: '🇿🇦' },
+  { id: 'ke', label: 'Kenya', shortCode: 'KE', flag: '🇰🇪' },
+  { id: 'zm', label: 'Zambia', shortCode: 'ZM', flag: '🇿🇲' },
 ];
 
 export default function LocalizationPicker() {
@@ -26,7 +26,7 @@ export default function LocalizationPicker() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  const current = LOCALIZATIONS.find((l) => l.id === localization) ?? { id: 'global' as Localization, label: 'Global (ESCO)' };
+  const current = LOCALIZATIONS.find((l) => l.id === localization) ?? LOCALIZATIONS[0]!;
 
   function handleSelect(id: Localization) {
     if (id !== localization) {
@@ -43,13 +43,14 @@ export default function LocalizationPicker() {
         aria-label="Select localization"
         aria-expanded={open}
       >
-        {current.flag && <span>{current.flag}</span>}
+        {current.flag ? <span className="text-base">{current.flag}</span> : <Globe size={16} />}
         <span>{current.label}</span>
+        <span className="text-xs font-normal text-text-muted">({current.shortCode})</span>
         <ChevronDown size={14} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 min-w-[200px] rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+        <div className="absolute right-0 top-full z-50 mt-1 min-w-[220px] rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
           {LOCALIZATIONS.map((loc) => (
             <button
               key={loc.id}
@@ -60,8 +61,9 @@ export default function LocalizationPicker() {
                   : 'text-oxford-blue'
               }`}
             >
-              {loc.flag && <span>{loc.flag}</span>}
-              {loc.label}
+              {loc.flag ? <span className="text-base">{loc.flag}</span> : <Globe size={16} />}
+              <span>{loc.label}</span>
+              <span className="text-xs font-normal text-text-muted">({loc.shortCode})</span>
             </button>
           ))}
         </div>
