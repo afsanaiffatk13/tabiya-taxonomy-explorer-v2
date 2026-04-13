@@ -272,89 +272,67 @@ function DetailPanelComponent({
           <h2 className="mb-2 text-base font-semibold uppercase tracking-wide text-text-muted">
             Related Skills ({relatedSkills.length})
           </h2>
-          {/* Check if this is unseen economy (has signalling values) */}
-          {relatedSkills.some(r => r.signallingValueLabel) ? (
-            // Unseen economy: group by signalling value
-            <div className="space-y-4">
-              {/* High signalling */}
-              {relatedSkills.filter(r => r.signallingValueLabel === 'high').length > 0 && (
-                <div className="border-l-4 border-blue-500 bg-gradient-to-r from-blue-50 to-transparent pl-4">
-                  <p className="mb-2 text-sm font-semibold text-blue-600">High Signalling Value</p>
-                  <ExpandableList
-                    items={relatedSkills
-                      .filter((r) => r.signallingValueLabel === 'high')
-                      .map(({ skill }) => ({ id: skill.id, label: skill.preferredLabel }))}
-                    type="skill"
-                    onNavigate={onNavigate}
-                    initialCount={15}
-                  />
-                </div>
-              )}
+          {(() => {
+            const hasSignalling = relatedSkills.some(r => r.signallingValueLabel);
+            const hasRelationType = relatedSkills.some(r => r.relationType === 'essential' || r.relationType === 'optional');
 
-              {/* Medium signalling */}
-              {relatedSkills.filter(r => r.signallingValueLabel === 'medium').length > 0 && (
-                <div className="border-l-4 border-green-500 bg-gradient-to-r from-green-50 to-transparent pl-4">
-                  <p className="mb-2 text-sm font-semibold text-green-600">Medium Signalling Value</p>
-                  <ExpandableList
-                    items={relatedSkills
-                      .filter((r) => r.signallingValueLabel === 'medium')
-                      .map(({ skill }) => ({ id: skill.id, label: skill.preferredLabel }))}
-                    type="skill"
-                    onNavigate={onNavigate}
-                    initialCount={15}
-                  />
+            if (hasSignalling) {
+              // Group by signalling value (high/medium/low)
+              return (
+                <div className="space-y-4">
+                  {(['high', 'medium', 'low'] as const).map(level => {
+                    const items = relatedSkills.filter(r => r.signallingValueLabel === level);
+                    if (items.length === 0) return null;
+                    const styles = { high: 'border-blue-500 from-blue-50 text-blue-600', medium: 'border-green-500 from-green-50 text-green-600', low: 'border-gray-400 from-gray-50 text-gray-600' };
+                    const labels = { high: 'High Signalling Value', medium: 'Medium Signalling Value', low: 'Low Signalling Value' };
+                    return (
+                      <div key={level} className={`border-l-4 bg-gradient-to-r to-transparent pl-4 ${styles[level]}`}>
+                        <p className={`mb-2 text-sm font-semibold ${styles[level].split(' ').pop()}`}>{labels[level]}</p>
+                        <ExpandableList
+                          items={items.map(({ skill }) => ({ id: skill.id, label: skill.preferredLabel }))}
+                          type="skill" onNavigate={onNavigate} initialCount={15}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
-              )}
+              );
+            }
 
-              {/* Low signalling */}
-              {relatedSkills.filter(r => r.signallingValueLabel === 'low').length > 0 && (
-                <div className="border-l-4 border-gray-400 bg-gradient-to-r from-gray-50 to-transparent pl-4">
-                  <p className="mb-2 text-sm font-semibold text-gray-600">Low Signalling Value</p>
-                  <ExpandableList
-                    items={relatedSkills
-                      .filter((r) => r.signallingValueLabel === 'low')
-                      .map(({ skill }) => ({ id: skill.id, label: skill.preferredLabel }))}
-                    type="skill"
-                    onNavigate={onNavigate}
-                    initialCount={10}
-                  />
+            if (hasRelationType) {
+              // Group by essential/optional
+              return (
+                <div className="space-y-4">
+                  {relatedSkills.filter(r => r.relationType === 'essential').length > 0 && (
+                    <div>
+                      <p className="mb-2 text-sm font-medium text-green-3">Essential</p>
+                      <ExpandableList
+                        items={relatedSkills.filter(r => r.relationType === 'essential').map(({ skill }) => ({ id: skill.id, label: skill.preferredLabel }))}
+                        type="skill" onNavigate={onNavigate} initialCount={15}
+                      />
+                    </div>
+                  )}
+                  {relatedSkills.filter(r => r.relationType === 'optional').length > 0 && (
+                    <div>
+                      <p className="mb-2 text-sm font-medium text-text-muted">Optional</p>
+                      <ExpandableList
+                        items={relatedSkills.filter(r => r.relationType === 'optional').map(({ skill }) => ({ id: skill.id, label: skill.preferredLabel }))}
+                        type="skill" onNavigate={onNavigate} initialCount={10}
+                      />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          ) : (
-            // Seen economy: group by relation type
-            <div className="space-y-4">
-              {/* Essential skills first */}
-              {relatedSkills.filter(r => r.relationType === 'essential').length > 0 && (
-                <div>
-                  <p className="mb-2 text-sm font-medium text-green-3">Essential</p>
-                  <ExpandableList
-                    items={relatedSkills
-                      .filter((r) => r.relationType === 'essential')
-                      .map(({ skill }) => ({ id: skill.id, label: skill.preferredLabel }))}
-                    type="skill"
-                    onNavigate={onNavigate}
-                    initialCount={15}
-                  />
-                </div>
-              )}
+              );
+            }
 
-              {/* Optional skills */}
-              {relatedSkills.filter(r => r.relationType === 'optional').length > 0 && (
-                <div>
-                  <p className="mb-2 text-sm font-medium text-text-muted">Optional</p>
-                  <ExpandableList
-                    items={relatedSkills
-                      .filter((r) => r.relationType === 'optional')
-                      .map(({ skill }) => ({ id: skill.id, label: skill.preferredLabel }))}
-                    type="skill"
-                    onNavigate={onNavigate}
-                    initialCount={10}
-                  />
-                </div>
-              )}
-            </div>
-          )}
+            // No grouping — show all skills in a flat list
+            return (
+              <ExpandableList
+                items={relatedSkills.map(({ skill }) => ({ id: skill.id, label: skill.preferredLabel }))}
+                type="skill" onNavigate={onNavigate} initialCount={20}
+              />
+            );
+          })()}
         </section>
       )}
 
