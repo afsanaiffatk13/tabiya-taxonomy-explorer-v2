@@ -144,7 +144,7 @@ function transformOccupation(row: OccupationRow): Occupation {
     occupationType: row.OCCUPATIONTYPE as OccupationType,
     scopeNote: row.SCOPENOTE || '',
     definition: row.DEFINITION || '',
-    isLocalized: row.ISLOCALIZED === 'true',
+    isLocalized: row.ISLOCALIZED?.toLowerCase() === 'true',
     entityType: 'occupation',
   };
 }
@@ -174,7 +174,7 @@ function transformSkill(row: SkillRow): Skill {
     skillType: (row.SKILLTYPE || 'skill/competence') as SkillType,
     scopeNote: row.SCOPENOTE || '',
     reuseLevel: row.REUSELEVEL || '',
-    isLocalized: row.ISLOCALIZED === 'true',
+    isLocalized: row.ISLOCALIZED?.toLowerCase() === 'true',
     entityType: 'skill',
   };
 }
@@ -273,15 +273,16 @@ export function isUnseenEconomy(code: string): boolean {
 // Separate seen and unseen occupation roots
 function separateOccupationRoots(
   tree: TreeNode[],
-  occupationGroups: Map<string, OccupationGroup>
+  _occupationGroups: Map<string, OccupationGroup>
 ): { seen: TreeNode[]; unseen: TreeNode[] } {
   const seen: TreeNode[] = [];
   const unseen: TreeNode[] = [];
 
   for (const node of tree) {
-    const group = occupationGroups.get(node.id);
-    // Unseen economy: codes starting with 'I' (ICATUS-based) or groups with localgroup type
-    if (group?.groupType === 'localgroup' || isUnseenEconomy(node.code)) {
+    // Unseen economy = ICATUS-based codes starting with 'I'. The groupType
+    // 'localgroup' is NOT a reliable indicator — Kenya/Zambia add
+    // localgroups under ISCO codes that are seen economy.
+    if (isUnseenEconomy(node.code)) {
       unseen.push(node);
     } else {
       seen.push(node);
@@ -291,7 +292,124 @@ function separateOccupationRoots(
   return { seen, unseen };
 }
 
-// Main data loading function - OPTIMIZED
+/**
+ * Raw row arrays as they come from CSV (or from a pre-parsed JSON bundle).
+ * Both loadTaxonomyData (CSV) and the bundle loader produce these, then
+ * hand them to buildTaxonomyDataFromRows.
+ */
+export interface RawTaxonomyRows {
+  occupationRows: OccupationRow[];
+  occupationGroupRows: OccupationGroupRow[];
+  skillRows: SkillRow[];
+  skillGroupRows: SkillGroupRow[];
+  occupationHierarchyRows: HierarchyRow[];
+  skillHierarchyRows: HierarchyRow[];
+  relationRows: RelationRow[];
+}
+
+/**
+ * Transform raw CSV-shaped rows into the full TaxonomyData structure.
+ * Shared by the CSV loader and the static-bundle loader.
+ */
+export function buildTaxonomyDataFromRows(
+  raw: RawTaxonomyRows,
+  label = 'buildTaxonomyDataFromRows'
+): TaxonomyData {
+  const totalStart = performance.now();
+
+  // Transform to entity maps
+  const occupations = new Map<string, Occupation>();
+  for (const row of raw.occupationRows) {
+    const occupation = transformOccupation(row);
+    occupations.set(occupation.id, occupation);
+  }
+
+  const occupationGroups = new Map<string, OccupationGroup>();
+  for (const row of raw.occupationGroupRows) {
+    const group = transformOccupationGroup(row);
+    occupationGroups.set(group.id, group);
+  }
+
+  const skills = new Map<string, Skill>();
+  for (const row of raw.skillRows) {
+    const skill = transformSkill(row);
+    skills.set(skill.id, skill);
+  }
+
+  const skillGroups = new Map<string, SkillGroup>();
+  for (const row of raw.skillGroupRows) {
+    const group = transformSkillGroup(row);
+    skillGroups.set(group.id, group);
+  }
+
+  // Hierarchy maps
+  const occChildrenMap = new Map<string, string[]>();
+  const occParentMap = new Map<string, string>();
+  for (const row of raw.occupationHierarchyRows) {
+    const rel = transformHierarchy(row);
+    if (!occChildrenMap.has(rel.parentId)) {
+      occChildrenMap.set(rel.parentId, []);
+    }
+    occChildrenMap.get(rel.parentId)!.push(rel.childId);
+    occParentMap.set(rel.childId, rel.parentId);
+  }
+
+  const skillChildrenMap = new Map<string, string[]>();
+  const skillParentMap = new Map<string, string>();
+  for (const row of raw.skillHierarchyRows) {
+    const rel = transformHierarchy(row);
+    if (!skillChildrenMap.has(rel.parentId)) {
+      skillChildrenMap.set(rel.parentId, []);
+    }
+    skillChildrenMap.get(rel.parentId)!.push(rel.childId);
+    skillParentMap.set(rel.childId, rel.parentId);
+  }
+
+  // Code lookup maps
+  const occupationsByCode = new Map<string, Occupation | OccupationGroup>();
+  for (const occ of occupations.values()) occupationsByCode.set(occ.code, occ);
+  for (const group of occupationGroups.values()) occupationsByCode.set(group.code, group);
+
+  const skillsByCode = new Map<string, Skill | SkillGroup>();
+  for (const skill of skills.values()) { if (skill.code) skillsByCode.set(skill.code, skill); }
+  for (const group of skillGroups.values()) skillsByCode.set(group.code, group);
+
+  // Relations + indexes
+  const occupationToSkillRelations = raw.relationRows.map(transformRelation);
+  const { relationsByOccupation, relationsBySkill } = buildRelationIndexes(occupationToSkillRelations);
+
+  // Hierarchy relation arrays for breadcrumbs
+  const occupationHierarchy = raw.occupationHierarchyRows.map(transformHierarchy);
+  const skillHierarchy = raw.skillHierarchyRows.map(transformHierarchy);
+
+  // Lazy trees
+  const allOccupationEntities = new Map<string, Occupation | OccupationGroup>();
+  for (const [id, entity] of occupations) allOccupationEntities.set(id, entity);
+  for (const [id, entity] of occupationGroups) allOccupationEntities.set(id, entity);
+
+  const allSkillEntities = new Map<string, Skill | SkillGroup>();
+  for (const [id, entity] of skills) allSkillEntities.set(id, entity);
+  for (const [id, entity] of skillGroups) allSkillEntities.set(id, entity);
+
+  const occupationTree = buildLazyTree(allOccupationEntities, occChildrenMap, occParentMap, 'occupation', 'occupationGroup');
+  const skillTree = buildLazyTree(allSkillEntities, skillChildrenMap, skillParentMap, 'skill', 'skillGroup');
+
+  const { seen: seenOccupationRoots, unseen: unseenOccupationRoots } =
+    separateOccupationRoots(occupationTree, occupationGroups);
+
+  console.log(`[${label}] ${(performance.now() - totalStart).toFixed(0)}ms — ${occupations.size} occupations, ${skills.size} skills, ${occupationToSkillRelations.length} relations`);
+
+  return {
+    occupations, occupationGroups, skills, skillGroups,
+    occupationsByCode, skillsByCode,
+    occupationHierarchy, skillHierarchy,
+    occupationToSkillRelations, relationsByOccupation, relationsBySkill,
+    occupationTree, skillTree, seenOccupationRoots, unseenOccupationRoots,
+    occChildrenMap, occParentMap, skillChildrenMap, skillParentMap,
+  };
+}
+
+// Main CSV data loading function
 export async function loadTaxonomyData(
   lang: Language,
   loc: Localization
@@ -300,8 +418,6 @@ export async function loadTaxonomyData(
   const basePath = await getDataPath(lang, loc);
   console.log(`[loadTaxonomyData] Loading from ${basePath}...`);
 
-  // Load all CSV files in parallel
-  const fetchStart = performance.now();
   const [
     occupationRows,
     occupationGroupRows,
@@ -319,164 +435,14 @@ export async function loadTaxonomyData(
     fetchCSV<HierarchyRow>(`${basePath}/skill_hierarchy.csv`),
     fetchCSV<RelationRow>(`${basePath}/occupation_to_skill_relations.csv`),
   ]);
-  console.log(`[loadTaxonomyData] All fetches complete in ${(performance.now() - fetchStart).toFixed(0)}ms`);
+  console.log(`[loadTaxonomyData] Fetches done in ${(performance.now() - totalStart).toFixed(0)}ms`);
 
-  // Transform to entity maps - use simple objects for speed
-  const transformStart = performance.now();
-
-  const occupations = new Map<string, Occupation>();
-  for (const row of occupationRows) {
-    const occupation = transformOccupation(row);
-    occupations.set(occupation.id, occupation);
-  }
-
-  const occupationGroups = new Map<string, OccupationGroup>();
-  for (const row of occupationGroupRows) {
-    const group = transformOccupationGroup(row);
-    occupationGroups.set(group.id, group);
-  }
-
-  const skills = new Map<string, Skill>();
-  for (const row of skillRows) {
-    const skill = transformSkill(row);
-    skills.set(skill.id, skill);
-  }
-
-  const skillGroups = new Map<string, SkillGroup>();
-  for (const row of skillGroupRows) {
-    const group = transformSkillGroup(row);
-    skillGroups.set(group.id, group);
-  }
-
-  console.log(`[loadTaxonomyData] Entity maps built in ${(performance.now() - transformStart).toFixed(0)}ms`);
-
-  // Build hierarchy maps (fast - just indexing)
-  const hierarchyStart = performance.now();
-
-  // Occupation hierarchy
-  const occChildrenMap = new Map<string, string[]>();
-  const occParentMap = new Map<string, string>();
-  for (const row of occupationHierarchyRows) {
-    const rel = transformHierarchy(row);
-    if (!occChildrenMap.has(rel.parentId)) {
-      occChildrenMap.set(rel.parentId, []);
-    }
-    occChildrenMap.get(rel.parentId)!.push(rel.childId);
-    occParentMap.set(rel.childId, rel.parentId);
-  }
-
-  // Skill hierarchy
-  const skillChildrenMap = new Map<string, string[]>();
-  const skillParentMap = new Map<string, string>();
-  for (const row of skillHierarchyRows) {
-    const rel = transformHierarchy(row);
-    if (!skillChildrenMap.has(rel.parentId)) {
-      skillChildrenMap.set(rel.parentId, []);
-    }
-    skillChildrenMap.get(rel.parentId)!.push(rel.childId);
-    skillParentMap.set(rel.childId, rel.parentId);
-  }
-
-  console.log(`[loadTaxonomyData] Hierarchy maps built in ${(performance.now() - hierarchyStart).toFixed(0)}ms`);
-
-  // Build code lookup maps
-  const occupationsByCode = new Map<string, Occupation | OccupationGroup>();
-  for (const occ of occupations.values()) {
-    occupationsByCode.set(occ.code, occ);
-  }
-  for (const group of occupationGroups.values()) {
-    occupationsByCode.set(group.code, group);
-  }
-
-  const skillsByCode = new Map<string, Skill | SkillGroup>();
-  for (const skill of skills.values()) {
-    if (skill.code) {
-      skillsByCode.set(skill.code, skill);
-    }
-  }
-  for (const group of skillGroups.values()) {
-    skillsByCode.set(group.code, group);
-  }
-
-  // Transform relations (keep raw - we index by occupation/skill on demand)
-  const occupationToSkillRelations = relationRows.map(transformRelation);
-
-  // Store hierarchy relations for breadcrumb building
-  const occupationHierarchy = occupationHierarchyRows.map(transformHierarchy);
-  const skillHierarchy = skillHierarchyRows.map(transformHierarchy);
-
-  // Build LAZY trees - only root nodes, children built on-demand
-  const treeStart = performance.now();
-
-  // Combined entity maps for tree building
-  const allOccupationEntities = new Map<string, Occupation | OccupationGroup>();
-  for (const [id, entity] of occupations) {
-    allOccupationEntities.set(id, entity);
-  }
-  for (const [id, entity] of occupationGroups) {
-    allOccupationEntities.set(id, entity);
-  }
-
-  const allSkillEntities = new Map<string, Skill | SkillGroup>();
-  for (const [id, entity] of skills) {
-    allSkillEntities.set(id, entity);
-  }
-  for (const [id, entity] of skillGroups) {
-    allSkillEntities.set(id, entity);
-  }
-
-  const occupationTree = buildLazyTree(
-    allOccupationEntities,
-    occChildrenMap,
-    occParentMap,
-    'occupation',
-    'occupationGroup'
-  );
-
-  const skillTree = buildLazyTree(
-    allSkillEntities,
-    skillChildrenMap,
-    skillParentMap,
-    'skill',
-    'skillGroup'
-  );
-
-  console.log(`[loadTaxonomyData] Lazy trees built in ${(performance.now() - treeStart).toFixed(0)}ms`);
-
-  // Separate seen/unseen occupation roots
-  const { seen: seenOccupationRoots, unseen: unseenOccupationRoots } =
-    separateOccupationRoots(occupationTree, occupationGroups);
-
-  const totalTime = performance.now() - totalStart;
-  console.log(`[loadTaxonomyData] TOTAL: ${totalTime.toFixed(0)}ms`);
-  console.log(`[loadTaxonomyData] Loaded: ${occupations.size} occupations, ${skills.size} skills, ${occupationToSkillRelations.length} relations`);
-
-  const { relationsByOccupation, relationsBySkill } = buildRelationIndexes(
-    occupationToSkillRelations
-  );
-
-  return {
-    occupations,
-    occupationGroups,
-    skills,
-    skillGroups,
-    occupationsByCode,
-    skillsByCode,
-    occupationHierarchy,
-    skillHierarchy,
-    occupationToSkillRelations,
-    relationsByOccupation,
-    relationsBySkill,
-    occupationTree,
-    skillTree,
-    seenOccupationRoots,
-    unseenOccupationRoots,
-    // NEW: Store hierarchy maps for lazy child building
-    occChildrenMap,
-    occParentMap,
-    skillChildrenMap,
-    skillParentMap,
-  };
+  return buildTaxonomyDataFromRows({
+    occupationRows, occupationGroupRows,
+    skillRows, skillGroupRows,
+    occupationHierarchyRows, skillHierarchyRows,
+    relationRows,
+  }, 'loadTaxonomyData');
 }
 
 // NEW: Build children for a node on-demand

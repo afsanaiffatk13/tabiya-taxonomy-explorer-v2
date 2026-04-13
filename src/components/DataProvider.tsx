@@ -1,13 +1,10 @@
 import { useEffect, type ReactNode } from 'react';
 import { useAppStore } from '@/store';
 import {
-  loadTaxonomyData,
-  loadTaxonomyDataFromSupabase,
-  loadOccupationSkillRelationsFromSupabase,
-} from '@/services';
-
-// Feature flag: Set to true to use Supabase, false to use CSV files
-const USE_SUPABASE = true;
+  loadTier1FromBundle,
+  loadDetailsFromBundle,
+  loadRelationsFromBundle,
+} from '@/services/bundleDataLoader';
 
 interface DataProviderProps {
   children: ReactNode;
@@ -18,10 +15,8 @@ let isLoadStarted = false;
 
 /**
  * Start loading data in background. Returns immediately, doesn't block.
- * Uses a simple boolean flag checked synchronously to prevent double loads.
  */
 function startBackgroundLoad(): void {
-  // Check flag SYNCHRONOUSLY - this runs before any async code
   if (isLoadStarted) {
     console.log('[DataProvider] Load already started, skipping duplicate');
     return;
@@ -33,108 +28,87 @@ function startBackgroundLoad(): void {
     return;
   }
 
-  // Set flag IMMEDIATELY (synchronously) before any async work
   isLoadStarted = true;
 
-  const { language, localization } = store;
-  const source = USE_SUPABASE ? 'Supabase' : 'CSV';
-  console.log(`[DataProvider] Starting background data load from ${source} for ${language}/${localization}...`);
-
+  const { localization } = store;
+  console.log(`[DataProvider] Starting load for localization "${localization}"...`);
   store.setIsLoading(true);
 
-  // Now do the async work
   (async () => {
     try {
-      // Tier 1 — groups, occupations, skills, hierarchies. Enough for the
-      // tree to render and keyword search to work. CSV path still loads
-      // everything in one shot.
-      const data = USE_SUPABASE
-        ? await loadTaxonomyDataFromSupabase(language, localization)
-        : await loadTaxonomyData(language, localization);
+      // Tier 1 — tree structure, keyword search. One gzipped download.
+      const data = await loadTier1FromBundle(localization);
 
       console.log('[DataProvider] Tier 1 loaded:', {
         occupations: data.occupations.size,
         skills: data.skills.size,
         occupationGroups: data.occupationGroups.size,
         skillGroups: data.skillGroups.size,
-        seenRoots: data.seenOccupationRoots.length,
-        unseenRoots: data.unseenOccupationRoots.length,
-        relationsAlreadyPresent: data.occupationToSkillRelations.length,
       });
 
       const liveStore = useAppStore.getState();
       liveStore.setTaxonomyData(data);
-      liveStore.setDataLoaded(language, localization);
+      liveStore.setDataLoaded(liveStore.language, localization);
       liveStore.setIsLoading(false);
       liveStore.setError(null);
 
-      // Tier 2 — occupation_skill_relations. Streamed in the background;
-      // detail panels and the network graph show a "loading…" pill until
-      // this resolves. The CSV path already includes relations, so skip.
-      if (USE_SUPABASE && data.occupationToSkillRelations.length === 0) {
-        loadOccupationSkillRelationsFromSupabase(language, localization)
+      // Background streams — details (descriptions/altLabels) + relations.
+      // Both are non-blocking; the tree works without them.
+      const guard = () => useAppStore.getState().dataLoadedForLoc === localization;
+
+      // Details — fills in descriptions for detail panels
+      loadDetailsFromBundle(localization)
+        .then((details) => {
+          if (!guard()) return;
+          useAppStore.getState().mergeDetails(details);
+          console.log('[DataProvider] Details merged');
+        })
+        .catch((err) => console.error('[DataProvider] Details load failed:', err));
+
+      // Relations — fills in occupation↔skill connections
+      if (data.occupationToSkillRelations.length === 0) {
+        loadRelationsFromBundle(localization)
           .then((relations) => {
-            // Guard against language change during the background fetch.
-            const current = useAppStore.getState();
-            if (
-              current.dataLoadedForLang !== language ||
-              current.dataLoadedForLoc !== localization
-            ) {
-              console.log('[DataProvider] Tier 2 result discarded — language changed');
-              return;
-            }
-            current.setRelations(relations);
-            console.log('[DataProvider] Tier 2 merged into store');
+            if (!guard()) return;
+            useAppStore.getState().setRelations(relations);
+            console.log(`[DataProvider] Relations merged (${relations.length})`);
           })
-          .catch((err) => {
-            console.error('[DataProvider] Tier 2 load failed:', err);
-            // Non-fatal — tier 1 UI is still functional.
-          });
+          .catch((err) => console.error('[DataProvider] Relations load failed:', err));
       }
     } catch (err) {
       console.error('[DataProvider] Failed to load data:', err);
       store.setIsLoading(false);
       store.setError(err instanceof Error ? err.message : 'Failed to load data');
-      isLoadStarted = false; // Reset so we can retry
+      isLoadStarted = false;
     }
   })();
 }
 
 /**
  * DataProvider starts loading taxonomy data in background immediately.
- * Children render right away - they handle their own loading states.
- * This enables progressive loading: show UI immediately, data arrives in background.
+ * Children render right away — they handle their own loading states.
  */
 export default function DataProvider({ children }: DataProviderProps) {
-  const language = useAppStore((state) => state.language);
   const localization = useAppStore((state) => state.localization);
-  const dataLoadedForLang = useAppStore((state) => state.dataLoadedForLang);
   const dataLoadedForLoc = useAppStore((state) => state.dataLoadedForLoc);
 
   useEffect(() => {
-    // Only reset and reload if we ALREADY HAVE data but for a DIFFERENT language
-    // Don't reset on initial load when dataLoadedForLang is null
-    const hasExistingData = dataLoadedForLang !== null;
-    const languageChanged =
-      hasExistingData &&
-      (dataLoadedForLang !== language || dataLoadedForLoc !== localization);
+    // If localization changed, reset and reload
+    const hasExistingData = dataLoadedForLoc !== null;
+    const locChanged = hasExistingData && dataLoadedForLoc !== localization;
 
-    if (languageChanged) {
+    if (locChanged) {
       console.log(
-        `[DataProvider] Language changed from ${dataLoadedForLang}/${dataLoadedForLoc} to ${language}/${localization}, reloading...`
+        `[DataProvider] Localization changed from ${dataLoadedForLoc} to ${localization}, reloading...`
       );
-      // Reset flag to allow new load
       isLoadStarted = false;
-      // Clear existing data to trigger reload
       const store = useAppStore.getState();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       store.setTaxonomyData(null as any);
     }
 
-    // Start background loading (non-blocking)
     startBackgroundLoad();
-  }, [language, localization, dataLoadedForLang, dataLoadedForLoc]);
+  }, [localization, dataLoadedForLoc]);
 
-  // Render children immediately - no blocking!
   return <>{children}</>;
 }

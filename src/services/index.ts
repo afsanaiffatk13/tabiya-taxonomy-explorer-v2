@@ -1,4 +1,3 @@
 export * from './dataLoader';
-export * from './supabaseDataLoader';
-export * from './supabaseClient';
+export * from './bundleDataLoader';
 export * from './semanticSearch';

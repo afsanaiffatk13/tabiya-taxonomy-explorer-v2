@@ -97,6 +97,12 @@ interface AppState
   // Actions - Data
   setTaxonomyData: (data: TaxonomyData) => void;
   setRelations: (relations: OccupationSkillRelation[]) => void;
+  mergeDetails: (details: {
+    occupations: unknown[];
+    occupation_groups: unknown[];
+    skills: unknown[];
+    skill_groups: unknown[];
+  }) => void;
   setIsLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
   setDataLoaded: (lang: Language, loc: Localization) => void;
@@ -111,7 +117,7 @@ export const useAppStore = create<AppState>()(
   subscribeWithSelector((set, get) => ({
     // Initial state - Language & Localization
     language: 'en',
-    localization: 'base',
+    localization: 'global',
 
     // Initial state - Navigation
     currentTab: 'about',
@@ -236,6 +242,52 @@ export const useAppStore = create<AppState>()(
         // it back to true when relations arrive (or immediately if the
         // incoming data already carries them, e.g. from cache hydration).
         isFullDataLoaded: data ? data.occupationToSkillRelations.length > 0 : false,
+      }),
+    mergeDetails: (details) =>
+      set((state) => {
+        if (!state.taxonomyData) return {};
+        const data = state.taxonomyData;
+
+        // Helper: parse altLabels from CSV string format
+        const parseAlt = (s: string) =>
+          s ? s.split(/[\n|]/).map((t: string) => t.trim()).filter(Boolean) : [];
+
+        // Merge full entity fields into existing Maps
+        for (const row of details.occupations as { ID: string; DESCRIPTION?: string; ALTLABELS?: string; DEFINITION?: string; SCOPENOTE?: string }[]) {
+          const existing = data.occupations.get(row.ID);
+          if (existing) {
+            existing.description = row.DESCRIPTION || existing.description;
+            existing.altLabels = row.ALTLABELS ? parseAlt(row.ALTLABELS) : existing.altLabels;
+            existing.definition = row.DEFINITION || existing.definition;
+            existing.scopeNote = row.SCOPENOTE || existing.scopeNote;
+          }
+        }
+        for (const row of details.occupation_groups as { ID: string; DESCRIPTION?: string; ALTLABELS?: string }[]) {
+          const existing = data.occupationGroups.get(row.ID);
+          if (existing) {
+            existing.description = row.DESCRIPTION || existing.description;
+            existing.altLabels = row.ALTLABELS ? parseAlt(row.ALTLABELS) : existing.altLabels;
+          }
+        }
+        for (const row of details.skills as { ID: string; DESCRIPTION?: string; ALTLABELS?: string; SCOPENOTE?: string }[]) {
+          const existing = data.skills.get(row.ID);
+          if (existing) {
+            existing.description = row.DESCRIPTION || existing.description;
+            existing.altLabels = row.ALTLABELS ? parseAlt(row.ALTLABELS) : existing.altLabels;
+            existing.scopeNote = row.SCOPENOTE || existing.scopeNote;
+          }
+        }
+        for (const row of details.skill_groups as { ID: string; DESCRIPTION?: string; ALTLABELS?: string; SCOPENOTE?: string }[]) {
+          const existing = data.skillGroups.get(row.ID);
+          if (existing) {
+            existing.description = row.DESCRIPTION || existing.description;
+            existing.altLabels = row.ALTLABELS ? parseAlt(row.ALTLABELS) : existing.altLabels;
+            existing.scopeNote = row.SCOPENOTE || existing.scopeNote;
+          }
+        }
+
+        // New ref so subscribers re-render
+        return { taxonomyData: { ...data } };
       }),
     setRelations: (relations) =>
       set((state) => {

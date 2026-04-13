@@ -8,7 +8,7 @@
 
 const DB_NAME = 'tabiya-taxonomy-cache';
 const STORE_NAME = 'rows';
-const CACHE_VERSION = 1;
+const CACHE_VERSION = 3; // Bumped: 3-tier bundles + localization fixes
 const FRESHNESS_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 interface CacheEntry<T> {

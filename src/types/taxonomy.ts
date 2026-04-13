@@ -1,7 +1,7 @@
 // Core taxonomy data types
 
 export type Language = 'en' | 'es';
-export type Localization = 'base' | 'za';
+export type Localization = 'base' | 'za' | 'global' | 'ke' | 'zm';
 
 export type OccupationType = 'escooccupation' | 'localoccupation';
 export type SkillType = 'skill/competence' | 'knowledge' | 'language' | 'transversal';

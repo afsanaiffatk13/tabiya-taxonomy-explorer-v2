@@ -1,0 +1,22 @@
+[
+  {
+    "id": "global",
+    "name": "Global",
+    "description": "Tabiya taxonomy based on ESCO 1.1.1"
+  },
+  {
+    "id": "za",
+    "name": "South Africa",
+    "description": "Tabiya South Africa localization"
+  },
+  {
+    "id": "ke",
+    "name": "Kenya",
+    "description": "Tabiya Kenya (KESCO) localization"
+  },
+  {
+    "id": "zm",
+    "name": "Zambia",
+    "description": "Tabiya Zambia localization"
+  }
+]
