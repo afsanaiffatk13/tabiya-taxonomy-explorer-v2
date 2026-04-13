@@ -24,6 +24,7 @@ import {
   getRelatedOccupations,
   getOccupationGroupChildren,
   getSkillGroupChildren,
+  isUnseenEconomy,
 } from '@/services';
 
 type Entity = Occupation | OccupationGroup | Skill | SkillGroup;
@@ -126,7 +127,6 @@ function DetailPanelComponent({
   const isGroup = item.entityType === 'occupationGroup' || item.entityType === 'skillGroup';
 
   // Get type-specific fields
-  const occupationType = isOccupation ? (item as Occupation).occupationType : null;
   const skillType = isSkill ? (item as Skill).skillType : null;
 
   // New local item = code contains "_" (e.g. "1112_1")
@@ -162,9 +162,9 @@ function DetailPanelComponent({
 
             {/* Tags */}
             <div className="flex flex-wrap gap-2 pt-1">
-              {occupationType && (
-                <Tag variant={occupationType === 'escooccupation' ? 'seen' : 'unseen'}>
-                  {occupationType === 'escooccupation' ? 'Seen Economy' : 'Unseen Economy'}
+              {isOccupation && (
+                <Tag variant={isUnseenEconomy(item.code) ? 'unseen' : 'seen'}>
+                  {isUnseenEconomy(item.code) ? 'Unseen Economy' : 'Seen Economy'}
                 </Tag>
               )}
               {skillType && (
