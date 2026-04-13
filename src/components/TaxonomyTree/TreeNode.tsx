@@ -2,6 +2,13 @@ import { memo, useCallback, KeyboardEvent, useMemo } from 'react';
 import { ChevronRight, ChevronDown, Folder, FileText } from 'lucide-react';
 import type { TreeNode as TreeNodeType, TaxonomyData } from '@/types';
 import { getChildrenForNode } from '@/services';
+import { useAppStore } from '@/store';
+
+const LOCALE_LABELS: Record<string, string> = {
+  za: 'ZA',
+  ke: 'KE',
+  zm: 'ZM',
+};
 
 interface TreeNodeProps {
   node: TreeNodeType;
@@ -26,6 +33,10 @@ function TreeNodeComponent({
   taxonomyData,
   domain = 'occupations',
 }: TreeNodeProps) {
+  const localization = useAppStore((s) => s.localization);
+  const localeLabel = LOCALE_LABELS[localization] || null;
+  const isMarked = node.isLocalized || node.code.includes('_');
+
   // Use childCount to determine if there are children (lazy loading)
   const hasChildren = node.childCount > 0;
   const indent = node.depth * 16;
@@ -125,19 +136,14 @@ function TreeNodeComponent({
           )}
         </button>
 
-        {/* Icon — filled for localized/added items */}
-        {(() => {
-          const isMarked = node.isLocalized || node.code.includes('_');
-          return (
-            <span className={`flex-shrink-0 ${isMarked ? 'text-tabiya-green' : 'text-green-3'}`}>
-              {node.isGroup ? (
-                <Folder className="h-4 w-4" fill={isMarked ? '#002147' : 'none'} />
-              ) : (
-                <FileText className="h-4 w-4" fill={isMarked ? '#002147' : 'none'} />
-              )}
-            </span>
-          );
-        })()}
+        {/* Icon */}
+        <span className="flex-shrink-0 text-green-3">
+          {node.isGroup ? (
+            <Folder className="h-4 w-4" />
+          ) : (
+            <FileText className="h-4 w-4" />
+          )}
+        </span>
 
         {/* Label */}
         <span className="min-w-0 flex-1 truncate text-base">
@@ -146,6 +152,16 @@ function TreeNodeComponent({
           </span>
           {node.label}
         </span>
+
+        {/* Locale badge for localized/added items */}
+        {isMarked && localeLabel && (
+          <span
+            className="flex-shrink-0 rounded bg-tabiya-green px-1 py-0.5 text-[9px] font-bold leading-none text-oxford-blue"
+            title="Added or localized for this region"
+          >
+            {localeLabel}
+          </span>
+        )}
 
         {/* Child Count */}
         {hasChildren && (
