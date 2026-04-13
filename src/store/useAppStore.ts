@@ -251,37 +251,45 @@ export const useAppStore = create<AppState>()(
         // Helper: parse altLabels from CSV string format
         const parseAlt = (s: string) =>
           s ? s.split(/[\n|]/).map((t: string) => t.trim()).filter(Boolean) : [];
+        const parseAddedAlt = (s: string | undefined) =>
+          s ? new Set(s.split('|').map((t: string) => t.trim().toLowerCase())) : new Set<string>();
+
+        type DetailRow = { ID: string; DESCRIPTION?: string; ALTLABELS?: string; DEFINITION?: string; SCOPENOTE?: string; ADDEDALTLABELS?: string };
 
         // Merge full entity fields into existing Maps
-        for (const row of details.occupations as { ID: string; DESCRIPTION?: string; ALTLABELS?: string; DEFINITION?: string; SCOPENOTE?: string }[]) {
+        for (const row of details.occupations as DetailRow[]) {
           const existing = data.occupations.get(row.ID);
           if (existing) {
             existing.description = row.DESCRIPTION || existing.description;
             existing.altLabels = row.ALTLABELS ? parseAlt(row.ALTLABELS) : existing.altLabels;
+            existing.addedAltLabels = parseAddedAlt(row.ADDEDALTLABELS);
             existing.definition = row.DEFINITION || existing.definition;
             existing.scopeNote = row.SCOPENOTE || existing.scopeNote;
           }
         }
-        for (const row of details.occupation_groups as { ID: string; DESCRIPTION?: string; ALTLABELS?: string }[]) {
+        for (const row of details.occupation_groups as DetailRow[]) {
           const existing = data.occupationGroups.get(row.ID);
           if (existing) {
             existing.description = row.DESCRIPTION || existing.description;
             existing.altLabels = row.ALTLABELS ? parseAlt(row.ALTLABELS) : existing.altLabels;
+            existing.addedAltLabels = parseAddedAlt(row.ADDEDALTLABELS);
           }
         }
-        for (const row of details.skills as { ID: string; DESCRIPTION?: string; ALTLABELS?: string; SCOPENOTE?: string }[]) {
+        for (const row of details.skills as DetailRow[]) {
           const existing = data.skills.get(row.ID);
           if (existing) {
             existing.description = row.DESCRIPTION || existing.description;
             existing.altLabels = row.ALTLABELS ? parseAlt(row.ALTLABELS) : existing.altLabels;
+            existing.addedAltLabels = parseAddedAlt(row.ADDEDALTLABELS);
             existing.scopeNote = row.SCOPENOTE || existing.scopeNote;
           }
         }
-        for (const row of details.skill_groups as { ID: string; DESCRIPTION?: string; ALTLABELS?: string; SCOPENOTE?: string }[]) {
+        for (const row of details.skill_groups as DetailRow[]) {
           const existing = data.skillGroups.get(row.ID);
           if (existing) {
             existing.description = row.DESCRIPTION || existing.description;
             existing.altLabels = row.ALTLABELS ? parseAlt(row.ALTLABELS) : existing.altLabels;
+            existing.addedAltLabels = parseAddedAlt(row.ADDEDALTLABELS);
             existing.scopeNote = row.SCOPENOTE || existing.scopeNote;
           }
         }

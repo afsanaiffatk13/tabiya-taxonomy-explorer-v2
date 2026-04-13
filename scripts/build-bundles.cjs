@@ -95,6 +95,60 @@ function formatBytes(bytes) {
 }
 
 // ---------------------------------------------------------------------------
+// Alt-label diffing — identify labels added by a localization
+// ---------------------------------------------------------------------------
+
+/**
+ * Build a Map of ID → Set<altLabel> from an array of parsed CSV rows.
+ * Used to compare a localization's alt labels against the Global base.
+ */
+function buildAltLabelIndex(rows) {
+  const index = new Map();
+  for (const row of rows) {
+    if (!row.ID || !row.ALTLABELS) continue;
+    const labels = row.ALTLABELS.split(/[\n|]/).map(s => s.trim().toLowerCase()).filter(Boolean);
+    index.set(row.ID, new Set(labels));
+  }
+  return index;
+}
+
+/**
+ * For each row, compute which alt labels are NOT in the base set and
+ * store them as a pipe-separated ADDEDALTLABELS field.
+ */
+function markAddedAltLabels(rows, baseIndex) {
+  let totalAdded = 0;
+  for (const row of rows) {
+    if (!row.ID || !row.ALTLABELS) continue;
+    const baseLabels = baseIndex.get(row.ID) || new Set();
+    const currentLabels = row.ALTLABELS.split(/[\n|]/).map(s => s.trim()).filter(Boolean);
+    const added = currentLabels.filter(l => !baseLabels.has(l.toLowerCase()));
+    if (added.length > 0) {
+      row.ADDEDALTLABELS = added.join('|');
+      totalAdded += added.length;
+    }
+  }
+  return totalAdded;
+}
+
+// ---------------------------------------------------------------------------
+
+let globalAltLabelIndexes = null;
+
+function loadGlobalAltLabelIndexes() {
+  if (globalAltLabelIndexes) return globalAltLabelIndexes;
+  const globalDir = LOCALIZATIONS.find(l => l.id === 'global').csvDir;
+  const entityFiles = ['occupations.csv', 'occupation_groups.csv', 'skills.csv', 'skill_groups.csv'];
+  globalAltLabelIndexes = {};
+  for (const f of entityFiles) {
+    const key = f.replace('.csv', '');
+    const rows = parseCSV(path.join(globalDir, f));
+    globalAltLabelIndexes[key] = buildAltLabelIndex(rows);
+  }
+  return globalAltLabelIndexes;
+}
+
+// ---------------------------------------------------------------------------
 
 function buildBundle(loc) {
   console.log(`\n=== ${loc.name} (${loc.id}) ===`);
@@ -141,6 +195,18 @@ function buildBundle(loc) {
   };
 
   // Details bundle — full entity data for detail panels (descriptions, alt labels, etc.)
+  // For non-global localizations, diff alt labels against the Global base
+  // and embed ADDEDALTLABELS for UI highlighting.
+  if (loc.id !== 'global') {
+    const baseIndexes = loadGlobalAltLabelIndexes();
+    let totalAdded = 0;
+    totalAdded += markAddedAltLabels(allData.occupations, baseIndexes.occupations);
+    totalAdded += markAddedAltLabels(allData.occupation_groups, baseIndexes.occupation_groups);
+    totalAdded += markAddedAltLabels(allData.skills, baseIndexes.skills);
+    totalAdded += markAddedAltLabels(allData.skill_groups, baseIndexes.skill_groups);
+    console.log(`  Added alt labels (vs Global): ${totalAdded}`);
+  }
+
   const details = {
     occupation_groups: allData.occupation_groups,
     occupations: allData.occupations,

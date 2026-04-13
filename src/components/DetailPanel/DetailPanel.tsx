@@ -240,17 +240,20 @@ function DetailPanelComponent({
             Alternative Names
           </h2>
           <div className="flex flex-wrap gap-2">
-            {item.altLabels.map((label, index) => (
-              <span
-                key={index}
-                className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm text-oxford-blue ${
-                  item.isLocalized ? 'bg-soft-green' : 'bg-tabiya-gray'
-                }`}
-              >
-                <TagIcon className="h-3 w-3 text-text-muted" />
-                {label}
-              </span>
-            ))}
+            {item.altLabels.map((label, index) => {
+              const isAdded = item.addedAltLabels.has(label.toLowerCase());
+              return (
+                <span
+                  key={index}
+                  className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm text-oxford-blue ${
+                    isAdded ? 'bg-soft-green' : 'bg-tabiya-gray'
+                  }`}
+                >
+                  <TagIcon className="h-3 w-3 text-text-muted" />
+                  {label}
+                </span>
+              );
+            })}
           </div>
         </section>
       )}

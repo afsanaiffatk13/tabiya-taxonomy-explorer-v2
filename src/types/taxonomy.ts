@@ -16,6 +16,9 @@ interface BaseEntity {
   code: string;
   preferredLabel: string;
   altLabels: string[];
+  // Alt labels added by a localization (not in the Global base).
+  // Set at build time by comparing against the base ESCO alt labels.
+  addedAltLabels: Set<string>;
   description: string;
   isLocalized: boolean;
 }
