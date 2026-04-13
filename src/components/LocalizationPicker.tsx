@@ -3,12 +3,25 @@ import { ChevronDown, Globe } from 'lucide-react';
 import { useAppStore } from '@/store';
 import type { Localization } from '@/types';
 
-const LOCALIZATIONS: { id: Localization; label: string; shortCode: string; flag?: string }[] = [
+const LOCALIZATIONS: { id: Localization; label: string; shortCode: string; flagCode?: string }[] = [
   { id: 'global', label: 'Global', shortCode: 'ESCO' },
-  { id: 'za', label: 'South Africa', shortCode: 'ZA', flag: '🇿🇦' },
-  { id: 'ke', label: 'Kenya', shortCode: 'KE', flag: '🇰🇪' },
-  { id: 'zm', label: 'Zambia', shortCode: 'ZM', flag: '🇿🇲' },
+  { id: 'za', label: 'South Africa', shortCode: 'ZA', flagCode: 'za' },
+  { id: 'ke', label: 'Kenya', shortCode: 'KE', flagCode: 'ke' },
+  { id: 'zm', label: 'Zambia', shortCode: 'ZM', flagCode: 'zm' },
 ];
+
+function FlagIcon({ code, size = 16 }: { code: string; size?: number }) {
+  return (
+    <img
+      src={`https://flagcdn.com/w40/${code}.png`}
+      alt=""
+      width={size}
+      height={Math.round(size * 0.75)}
+      className="inline-block rounded-sm"
+      style={{ objectFit: 'cover' }}
+    />
+  );
+}
 
 export default function LocalizationPicker() {
   const localization = useAppStore((s) => s.localization);
@@ -43,7 +56,7 @@ export default function LocalizationPicker() {
         aria-label="Select localization"
         aria-expanded={open}
       >
-        {current.flag ? <span className="text-base">{current.flag}</span> : <Globe size={16} />}
+        {current.flagCode ? <FlagIcon code={current.flagCode} /> : <Globe size={16} />}
         <span>{current.label}</span>
         <span className="text-xs font-normal text-text-muted">({current.shortCode})</span>
         <ChevronDown size={14} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -61,7 +74,7 @@ export default function LocalizationPicker() {
                   : 'text-oxford-blue'
               }`}
             >
-              {loc.flag ? <span className="text-base">{loc.flag}</span> : <Globe size={16} />}
+              {loc.flagCode ? <FlagIcon code={loc.flagCode} /> : <Globe size={16} />}
               <span>{loc.label}</span>
               <span className="text-xs font-normal text-text-muted">({loc.shortCode})</span>
             </button>
