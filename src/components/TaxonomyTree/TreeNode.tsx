@@ -1,5 +1,5 @@
 import { memo, useCallback, KeyboardEvent, useMemo } from 'react';
-import { ChevronRight, ChevronDown, Folder, FileText, MapPin } from 'lucide-react';
+import { ChevronRight, ChevronDown, Folder, FileText } from 'lucide-react';
 import type { TreeNode as TreeNodeType, TaxonomyData } from '@/types';
 import { getChildrenForNode } from '@/services';
 
@@ -125,12 +125,12 @@ function TreeNodeComponent({
           )}
         </button>
 
-        {/* Icon */}
-        <span className="flex-shrink-0 text-green-3">
+        {/* Icon — filled for localized items */}
+        <span className={`flex-shrink-0 ${node.isLocalized ? 'text-orange-500' : 'text-green-3'}`}>
           {node.isGroup ? (
-            <Folder className="h-4 w-4" />
+            <Folder className="h-4 w-4" fill={node.isLocalized ? 'currentColor' : 'none'} />
           ) : (
-            <FileText className="h-4 w-4" />
+            <FileText className="h-4 w-4" fill={node.isLocalized ? 'currentColor' : 'none'} />
           )}
         </span>
 
@@ -141,13 +141,6 @@ function TreeNodeComponent({
           </span>
           {node.label}
         </span>
-
-        {/* Localized Badge */}
-        {node.isLocalized && (
-          <span className="flex-shrink-0" title="Localized for this region">
-            <MapPin className="h-3.5 w-3.5 text-green-2" />
-          </span>
-        )}
 
         {/* Child Count */}
         {hasChildren && (

@@ -5,7 +5,6 @@ import {
   Tag as TagIcon,
   BookOpen,
   Briefcase,
-  MapPin,
   ChevronRight,
   ChevronDown,
   Loader2,
@@ -130,6 +129,9 @@ function DetailPanelComponent({
   const occupationType = isOccupation ? (item as Occupation).occupationType : null;
   const skillType = isSkill ? (item as Skill).skillType : null;
 
+  // New local item = code contains "_" (e.g. "1112_1")
+  const isNewLocalItem = item.isLocalized && item.code.includes('_');
+
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
@@ -173,9 +175,13 @@ function DetailPanelComponent({
               {isGroup && (
                 <Tag variant="default">Group</Tag>
               )}
-              {item.isLocalized && (
+              {isNewLocalItem && (
                 <Tag variant="localized">
-                  <MapPin className="mr-1 h-3 w-3" />
+                  New {isOccupation ? 'Occupation' : 'Skill'}
+                </Tag>
+              )}
+              {item.isLocalized && !isNewLocalItem && (
+                <Tag variant="localized">
                   Localized
                 </Tag>
               )}
@@ -237,7 +243,9 @@ function DetailPanelComponent({
             {item.altLabels.map((label, index) => (
               <span
                 key={index}
-                className="inline-flex items-center gap-1 rounded-full bg-tabiya-gray px-3 py-1 text-sm text-oxford-blue"
+                className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm text-oxford-blue ${
+                  item.isLocalized ? 'bg-soft-green' : 'bg-tabiya-gray'
+                }`}
               >
                 <TagIcon className="h-3 w-3 text-text-muted" />
                 {label}
