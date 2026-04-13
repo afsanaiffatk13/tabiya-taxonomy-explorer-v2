@@ -99,15 +99,27 @@ function formatBytes(bytes) {
 // ---------------------------------------------------------------------------
 
 /**
- * Build a Map of ID → Set<altLabel> from an array of parsed CSV rows.
+ * Get the origin UUID (last entry in UUIDHISTORY) for an entity.
+ * This is stable across localizations — the same occupation in Global
+ * and ZA will share the same origin UUID even though their IDs differ.
+ */
+function originUuid(row) {
+  if (!row.UUIDHISTORY) return row.ID; // fallback to ID
+  const uuids = row.UUIDHISTORY.split(/\n/).map(s => s.trim()).filter(Boolean);
+  return uuids[uuids.length - 1] || row.ID;
+}
+
+/**
+ * Build a Map of originUUID → Set<altLabel> from an array of parsed CSV rows.
  * Used to compare a localization's alt labels against the Global base.
  */
 function buildAltLabelIndex(rows) {
   const index = new Map();
   for (const row of rows) {
-    if (!row.ID || !row.ALTLABELS) continue;
+    if (!row.ALTLABELS) continue;
+    const key = originUuid(row);
     const labels = row.ALTLABELS.split(/[\n|]/).map(s => s.trim().toLowerCase()).filter(Boolean);
-    index.set(row.ID, new Set(labels));
+    index.set(key, new Set(labels));
   }
   return index;
 }
@@ -119,8 +131,9 @@ function buildAltLabelIndex(rows) {
 function markAddedAltLabels(rows, baseIndex) {
   let totalAdded = 0;
   for (const row of rows) {
-    if (!row.ID || !row.ALTLABELS) continue;
-    const baseLabels = baseIndex.get(row.ID) || new Set();
+    if (!row.ALTLABELS) continue;
+    const key = originUuid(row);
+    const baseLabels = baseIndex.get(key) || new Set();
     const currentLabels = row.ALTLABELS.split(/[\n|]/).map(s => s.trim()).filter(Boolean);
     const added = currentLabels.filter(l => !baseLabels.has(l.toLowerCase()));
     if (added.length > 0) {
