@@ -107,6 +107,12 @@ export interface TaxonomyData {
   // Relations
   occupationToSkillRelations: OccupationSkillRelation[];
 
+  // Relation indexes — built once when relations land. Lookups by id are
+  // O(1) instead of a linear scan over all 130K rows. Empty until tier 2
+  // (the relations fetch) resolves.
+  relationsByOccupation: Map<string, OccupationSkillRelation[]>;
+  relationsBySkill: Map<string, OccupationSkillRelation[]>;
+
   // Pre-built trees (root nodes only - children built on demand)
   occupationTree: TreeNode[];
   skillTree: TreeNode[];

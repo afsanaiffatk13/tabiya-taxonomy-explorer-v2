@@ -6,6 +6,7 @@
  */
 
 import { supabase } from './supabaseClient';
+import { getCachedRows, setCachedRows } from './dbCache';
 import type {
   Language,
   Localization,
@@ -22,6 +23,57 @@ import type {
   RelationType,
   OccupationGroupType,
 } from '@/types';
+
+// Raw row shapes (mirrors of the Supabase schema columns we care about)
+type OccupationRow = {
+  id: string;
+  code: string;
+  preferred_label: string;
+  alt_labels: string[] | null;
+  description: string | null;
+  occupation_type: string;
+  definition: string | null;
+  is_localized: boolean;
+};
+type OccupationGroupRow = {
+  id: string;
+  code: string;
+  preferred_label: string;
+  alt_labels: string[] | null;
+  description: string | null;
+  group_type: string | null;
+};
+type SkillRow = {
+  id: string;
+  code: string | null;
+  preferred_label: string;
+  alt_labels: string[] | null;
+  description: string | null;
+  skill_type: string | null;
+  reuse_level: string | null;
+  is_localized: boolean;
+};
+type SkillGroupRow = {
+  id: string;
+  code: string;
+  preferred_label: string;
+  alt_labels: string[] | null;
+  description: string | null;
+};
+type HierarchyRow = {
+  parent_id: string;
+  child_id: string;
+  parent_type: string;
+  child_type: string;
+};
+type RelationRow = {
+  occupation_id: string;
+  skill_id: string;
+  relation_type: string;
+  signalling_value: number | null;
+  signalling_value_label: string | null;
+  occupation_type: string | null;
+};
 
 // Transform database row to Occupation entity
 function transformOccupation(row: {
@@ -259,16 +311,41 @@ async function fetchAllFromTable<T>(
 }
 
 /**
- * Main data loading function - loads from Supabase
+ * Cache-aware table fetcher. On hit, returns from IndexedDB instantly.
+ * On miss, fetches from Supabase and writes back to cache (fire-and-forget).
+ */
+async function fetchTableCached<T>(
+  tableName: string,
+  lang: Language,
+  loc: Localization
+): Promise<T[]> {
+  const cached = await getCachedRows<T>(lang, loc, tableName);
+  if (cached) {
+    console.log(`[supabase] cache hit: ${tableName} (${cached.length} rows)`);
+    return cached;
+  }
+  const rows = await fetchAllFromTable<T>(tableName);
+  // fire-and-forget — don't block on write
+  void setCachedRows(lang, loc, tableName, rows);
+  return rows;
+}
+
+/**
+ * Tier 1 loader: everything needed to render the tree and run keyword search.
+ *
+ * Skips occupation_skill_relations (~130K rows / ~75% of total). The detail
+ * panel "related skills" sections and the network graph are stubbed with an
+ * empty relations array until tier 2 (loadOccupationSkillRelationsFromSupabase)
+ * resolves and is merged in.
  */
 export async function loadTaxonomyDataFromSupabase(
-  _lang: Language,
-  _loc: Localization
+  lang: Language,
+  loc: Localization
 ): Promise<TaxonomyData> {
   const totalStart = performance.now();
-  console.log('[loadTaxonomyDataFromSupabase] Loading from Supabase...');
+  console.log('[loadTaxonomyDataFromSupabase] Loading tier 1 (no relations)...');
 
-  // Load all data in parallel
+  // Load tier 1 in parallel
   const fetchStart = performance.now();
   const [
     occupationRows,
@@ -277,67 +354,17 @@ export async function loadTaxonomyDataFromSupabase(
     skillGroupRows,
     occupationHierarchyRows,
     skillHierarchyRows,
-    relationRows,
   ] = await Promise.all([
-    fetchAllFromTable<{
-      id: string;
-      code: string;
-      preferred_label: string;
-      alt_labels: string[] | null;
-      description: string | null;
-      occupation_type: string;
-      definition: string | null;
-      is_localized: boolean;
-    }>('occupations'),
-    fetchAllFromTable<{
-      id: string;
-      code: string;
-      preferred_label: string;
-      alt_labels: string[] | null;
-      description: string | null;
-      group_type: string | null;
-    }>('occupation_groups'),
-    fetchAllFromTable<{
-      id: string;
-      code: string | null;
-      preferred_label: string;
-      alt_labels: string[] | null;
-      description: string | null;
-      skill_type: string | null;
-      reuse_level: string | null;
-      is_localized: boolean;
-    }>('skills'),
-    fetchAllFromTable<{
-      id: string;
-      code: string;
-      preferred_label: string;
-      alt_labels: string[] | null;
-      description: string | null;
-    }>('skill_groups'),
-    fetchAllFromTable<{
-      parent_id: string;
-      child_id: string;
-      parent_type: string;
-      child_type: string;
-    }>('occupation_hierarchy'),
-    fetchAllFromTable<{
-      parent_id: string;
-      child_id: string;
-      parent_type: string;
-      child_type: string;
-    }>('skill_hierarchy'),
-    fetchAllFromTable<{
-      occupation_id: string;
-      skill_id: string;
-      relation_type: string;
-      signalling_value: number | null;
-      signalling_value_label: string | null;
-      occupation_type: string | null;
-    }>('occupation_skill_relations'),
+    fetchTableCached<OccupationRow>('occupations', lang, loc),
+    fetchTableCached<OccupationGroupRow>('occupation_groups', lang, loc),
+    fetchTableCached<SkillRow>('skills', lang, loc),
+    fetchTableCached<SkillGroupRow>('skill_groups', lang, loc),
+    fetchTableCached<HierarchyRow>('occupation_hierarchy', lang, loc),
+    fetchTableCached<HierarchyRow>('skill_hierarchy', lang, loc),
   ]);
 
-  console.log(`[loadTaxonomyDataFromSupabase] All fetches complete in ${(performance.now() - fetchStart).toFixed(0)}ms`);
-  console.log(`[loadTaxonomyDataFromSupabase] Rows: occupations=${occupationRows.length}, skills=${skillRows.length}, relations=${relationRows.length}`);
+  console.log(`[loadTaxonomyDataFromSupabase] Tier 1 fetches complete in ${(performance.now() - fetchStart).toFixed(0)}ms`);
+  console.log(`[loadTaxonomyDataFromSupabase] Rows: occupations=${occupationRows.length}, skills=${skillRows.length}`);
 
   // Transform to entity maps
   const transformStart = performance.now();
@@ -416,8 +443,9 @@ export async function loadTaxonomyDataFromSupabase(
     skillsByCode.set(group.code, group);
   }
 
-  // Transform relations
-  const occupationToSkillRelations = relationRows.map(transformRelation);
+  // Tier 2 — relations are loaded asynchronously after first paint.
+  // See loadOccupationSkillRelationsFromSupabase below.
+  const occupationToSkillRelations: OccupationSkillRelation[] = [];
 
   // Store hierarchy relations for breadcrumb building
   const occupationHierarchy = occupationHierarchyRows.map(transformHierarchy);
@@ -466,8 +494,8 @@ export async function loadTaxonomyDataFromSupabase(
     separateOccupationRoots(occupationTree, occupationGroups);
 
   const totalTime = performance.now() - totalStart;
-  console.log(`[loadTaxonomyDataFromSupabase] TOTAL: ${totalTime.toFixed(0)}ms`);
-  console.log(`[loadTaxonomyDataFromSupabase] Loaded: ${occupations.size} occupations, ${skills.size} skills, ${occupationToSkillRelations.length} relations`);
+  console.log(`[loadTaxonomyDataFromSupabase] Tier 1 TOTAL: ${totalTime.toFixed(0)}ms`);
+  console.log(`[loadTaxonomyDataFromSupabase] Loaded: ${occupations.size} occupations, ${skills.size} skills`);
 
   return {
     occupations,
@@ -479,6 +507,9 @@ export async function loadTaxonomyDataFromSupabase(
     occupationHierarchy,
     skillHierarchy,
     occupationToSkillRelations,
+    // Tier 2 will populate these via the store's setRelations action.
+    relationsByOccupation: new Map(),
+    relationsBySkill: new Map(),
     occupationTree,
     skillTree,
     seenOccupationRoots,
@@ -488,4 +519,29 @@ export async function loadTaxonomyDataFromSupabase(
     skillChildrenMap,
     skillParentMap,
   };
+}
+
+/**
+ * Tier 2 loader: occupation_skill_relations (~130K rows).
+ *
+ * Called in the background after tier 1 returns. Uses the same IndexedDB
+ * cache, so a returning user gets it instantly. The result is merged into
+ * the existing TaxonomyData via the store's setRelations action.
+ */
+export async function loadOccupationSkillRelationsFromSupabase(
+  lang: Language,
+  loc: Localization
+): Promise<OccupationSkillRelation[]> {
+  const start = performance.now();
+  console.log('[loadOccupationSkillRelationsFromSupabase] Loading tier 2...');
+  const relationRows = await fetchTableCached<RelationRow>(
+    'occupation_skill_relations',
+    lang,
+    loc
+  );
+  const relations = relationRows.map(transformRelation);
+  console.log(
+    `[loadOccupationSkillRelationsFromSupabase] Tier 2 done in ${(performance.now() - start).toFixed(0)}ms (${relations.length} relations)`
+  );
+  return relations;
 }

@@ -21,6 +21,7 @@ export default function SkillsPage() {
 
   // Get loading state directly from store
   const isLoading = useAppStore((state) => state.isLoading);
+  const isFullDataLoaded = useAppStore((state) => state.isFullDataLoaded);
   const taxonomyData = useAppStore((state) => state.taxonomyData);
 
   // Local state for tree filter
@@ -187,6 +188,7 @@ export default function SkillsPage() {
                         onNavigate={handleNavigate}
                         onShowNetwork={handleShowNetwork}
                         isLoading={isLoading}
+                        isFullDataLoaded={isFullDataLoaded}
                       />
                     </CardContent>
                   </Card>

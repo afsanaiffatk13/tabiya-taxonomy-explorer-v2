@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
+import { buildRelationIndexes } from '@/services/dataLoader';
 import type {
   Language,
   Localization,
@@ -10,6 +11,7 @@ import type {
   TaxonomyEntity,
   SearchResult,
   TreeNode,
+  OccupationSkillRelation,
 } from '@/types';
 
 // Selection state
@@ -43,6 +45,10 @@ interface NavigationState {
 interface DataState {
   taxonomyData: TaxonomyData | null;
   isLoading: boolean;
+  // True once tier 2 (occupation_skill_relations) has been merged in.
+  // Tier 1 alone is enough for the tree + keyword search; relations are
+  // streamed in the background.
+  isFullDataLoaded: boolean;
   error: string | null;
   dataLoadedForLang: Language | null;
   dataLoadedForLoc: Localization | null;
@@ -90,6 +96,7 @@ interface AppState
 
   // Actions - Data
   setTaxonomyData: (data: TaxonomyData) => void;
+  setRelations: (relations: OccupationSkillRelation[]) => void;
   setIsLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
   setDataLoaded: (lang: Language, loc: Localization) => void;
@@ -128,6 +135,7 @@ export const useAppStore = create<AppState>()(
     // Initial state - Data
     taxonomyData: null,
     isLoading: false,
+    isFullDataLoaded: false,
     error: null,
     dataLoadedForLang: null,
     dataLoadedForLoc: null,
@@ -221,7 +229,31 @@ export const useAppStore = create<AppState>()(
     clearSearch: () => set({ query: '', results: [], isSearching: false }),
 
     // Actions - Data
-    setTaxonomyData: (data) => set({ taxonomyData: data }),
+    setTaxonomyData: (data) =>
+      set({
+        taxonomyData: data,
+        // A fresh tier-1 load resets the full-data flag; tier 2 will flip
+        // it back to true when relations arrive (or immediately if the
+        // incoming data already carries them, e.g. from cache hydration).
+        isFullDataLoaded: data ? data.occupationToSkillRelations.length > 0 : false,
+      }),
+    setRelations: (relations) =>
+      set((state) => {
+        if (!state.taxonomyData) return {};
+        // Build O(1) lookup indexes once. Without this, every
+        // getRelatedSkills call linearly scans 130K rows — and
+        // building one network graph calls it ~321 times.
+        const indexes = buildRelationIndexes(relations);
+        return {
+          taxonomyData: {
+            ...state.taxonomyData,
+            occupationToSkillRelations: relations,
+            relationsByOccupation: indexes.relationsByOccupation,
+            relationsBySkill: indexes.relationsBySkill,
+          },
+          isFullDataLoaded: true,
+        };
+      }),
     setIsLoading: (isLoading) => set({ isLoading }),
     setError: (error) => set({ error }),
     setDataLoaded: (lang, loc) =>
@@ -274,6 +306,7 @@ export const selectCurrentTab = (state: AppState) => state.currentTab;
 export const selectSelectedId = (state: AppState) => state.selectedId;
 export const selectTaxonomyData = (state: AppState) => state.taxonomyData;
 export const selectIsLoading = (state: AppState) => state.isLoading;
+export const selectIsFullDataLoaded = (state: AppState) => state.isFullDataLoaded;
 export const selectSearchQuery = (state: AppState) => state.query;
 export const selectSearchResults = (state: AppState) => state.results;
 export const selectExpandedNodes = (state: AppState) => state.expandedNodes;

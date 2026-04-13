@@ -451,6 +451,10 @@ export async function loadTaxonomyData(
   console.log(`[loadTaxonomyData] TOTAL: ${totalTime.toFixed(0)}ms`);
   console.log(`[loadTaxonomyData] Loaded: ${occupations.size} occupations, ${skills.size} skills, ${occupationToSkillRelations.length} relations`);
 
+  const { relationsByOccupation, relationsBySkill } = buildRelationIndexes(
+    occupationToSkillRelations
+  );
+
   return {
     occupations,
     occupationGroups,
@@ -461,6 +465,8 @@ export async function loadTaxonomyData(
     occupationHierarchy,
     skillHierarchy,
     occupationToSkillRelations,
+    relationsByOccupation,
+    relationsBySkill,
     occupationTree,
     skillTree,
     seenOccupationRoots,
@@ -544,14 +550,41 @@ export function getChildrenForNode(
   return children;
 }
 
+/**
+ * Build by-occupation and by-skill indexes from a flat relations array.
+ * Single O(N) pass; the resulting Maps make every related-* lookup O(1).
+ */
+export function buildRelationIndexes(
+  relations: OccupationSkillRelation[]
+): {
+  relationsByOccupation: Map<string, OccupationSkillRelation[]>;
+  relationsBySkill: Map<string, OccupationSkillRelation[]>;
+} {
+  const relationsByOccupation = new Map<string, OccupationSkillRelation[]>();
+  const relationsBySkill = new Map<string, OccupationSkillRelation[]>();
+  for (const rel of relations) {
+    let byOcc = relationsByOccupation.get(rel.occupationId);
+    if (!byOcc) {
+      byOcc = [];
+      relationsByOccupation.set(rel.occupationId, byOcc);
+    }
+    byOcc.push(rel);
+    let bySkill = relationsBySkill.get(rel.skillId);
+    if (!bySkill) {
+      bySkill = [];
+      relationsBySkill.set(rel.skillId, bySkill);
+    }
+    bySkill.push(rel);
+  }
+  return { relationsByOccupation, relationsBySkill };
+}
+
 // Get related skills for an occupation
 export function getRelatedSkills(
   data: TaxonomyData,
   occupationId: string
 ): { skill: Skill; relationType: RelationType | ''; signallingValue: number | null; signallingValueLabel: string }[] {
-  const relations = data.occupationToSkillRelations.filter(
-    (rel) => rel.occupationId === occupationId
-  );
+  const relations = data.relationsByOccupation.get(occupationId) ?? [];
 
   return relations
     .map((rel) => {
@@ -585,9 +618,7 @@ export function getRelatedOccupations(
   data: TaxonomyData,
   skillId: string
 ): { occupation: Occupation; relationType: RelationType | ''; signallingValue: number | null }[] {
-  const relations = data.occupationToSkillRelations.filter(
-    (rel) => rel.skillId === skillId
-  );
+  const relations = data.relationsBySkill.get(skillId) ?? [];
 
   return relations
     .map((rel) => {

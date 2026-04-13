@@ -35,6 +35,10 @@ interface DetailPanelProps {
   onNavigate: (id: string, type: string) => void;
   onShowNetwork?: (id: string, type: 'occupation' | 'skill', label: string, code: string) => void;
   isLoading?: boolean;
+  // False until tier 2 (occupation_skill_relations) has streamed in.
+  // While false, the related-items sections show a loading pill instead
+  // of being silently empty, and the network CTA is disabled.
+  isFullDataLoaded?: boolean;
 }
 
 function DetailPanelComponent({
@@ -43,6 +47,7 @@ function DetailPanelComponent({
   onNavigate,
   onShowNetwork,
   isLoading = false,
+  isFullDataLoaded = true,
 }: DetailPanelProps) {
   // Get breadcrumb path
   const breadcrumbPath = useMemo(() => {
@@ -193,16 +198,21 @@ function DetailPanelComponent({
                 item.code
               );
             }}
-            disabled={isNetworkLoading}
-            className="inline text-sm font-medium leading-relaxed text-green-3"
+            disabled={isNetworkLoading || !isFullDataLoaded}
+            className="inline text-sm font-medium leading-relaxed text-green-3 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <span className="inline-flex items-center gap-2 bg-tabiya-green px-1 text-oxford-blue transition-colors hover:bg-oxford-blue hover:text-white">
               See how this {isOccupation ? 'occupation' : 'skill'} connects to the broader taxonomy →
-              {isNetworkLoading && (
+              {(isNetworkLoading || !isFullDataLoaded) && (
                 <Loader2 className="h-4 w-4 animate-spin" />
               )}
             </span>
           </button>
+          {!isFullDataLoaded && (
+            <p className="mt-2 text-xs text-text-muted">
+              Loading connection data…
+            </p>
+          )}
         </div>
       )}
 
@@ -238,6 +248,17 @@ function DetailPanelComponent({
       )}
 
       {/* Related Skills (for occupations) */}
+      {isOccupation && !isFullDataLoaded && relatedSkills.length === 0 && (
+        <section>
+          <h2 className="mb-2 text-base font-semibold uppercase tracking-wide text-text-muted">
+            Related Skills
+          </h2>
+          <p className="inline-flex items-center gap-2 text-sm text-text-muted">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading related skills…
+          </p>
+        </section>
+      )}
       {relatedSkills.length > 0 && (
         <section>
           <h2 className="mb-2 text-base font-semibold uppercase tracking-wide text-text-muted">
@@ -330,6 +351,17 @@ function DetailPanelComponent({
       )}
 
       {/* Related Occupations (for skills) */}
+      {isSkill && !isFullDataLoaded && relatedOccupations.length === 0 && (
+        <section>
+          <h2 className="mb-2 text-base font-semibold uppercase tracking-wide text-text-muted">
+            Related Occupations
+          </h2>
+          <p className="inline-flex items-center gap-2 text-sm text-text-muted">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading related occupations…
+          </p>
+        </section>
+      )}
       {relatedOccupations.length > 0 && (
         <section>
           <h2 className="mb-2 text-base font-semibold uppercase tracking-wide text-text-muted">

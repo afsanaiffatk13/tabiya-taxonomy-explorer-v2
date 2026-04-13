@@ -26,6 +26,7 @@ export default function OccupationsPage() {
 
   // Get loading state directly from store
   const isLoading = useAppStore((state) => state.isLoading);
+  const isFullDataLoaded = useAppStore((state) => state.isFullDataLoaded);
   const taxonomyData = useAppStore((state) => state.taxonomyData);
 
   // Local state for tree filter
@@ -231,6 +232,7 @@ export default function OccupationsPage() {
                         onNavigate={handleNavigate}
                         onShowNetwork={handleShowNetwork}
                         isLoading={isLoading}
+                        isFullDataLoaded={isFullDataLoaded}
                       />
                     </CardContent>
                   </Card>

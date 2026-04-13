@@ -1,6 +1,10 @@
 import { useEffect, type ReactNode } from 'react';
 import { useAppStore } from '@/store';
-import { loadTaxonomyData, loadTaxonomyDataFromSupabase } from '@/services';
+import {
+  loadTaxonomyData,
+  loadTaxonomyDataFromSupabase,
+  loadOccupationSkillRelationsFromSupabase,
+} from '@/services';
 
 // Feature flag: Set to true to use Supabase, false to use CSV files
 const USE_SUPABASE = true;
@@ -41,25 +45,52 @@ function startBackgroundLoad(): void {
   // Now do the async work
   (async () => {
     try {
-      // Use Supabase or CSV based on feature flag
+      // Tier 1 — groups, occupations, skills, hierarchies. Enough for the
+      // tree to render and keyword search to work. CSV path still loads
+      // everything in one shot.
       const data = USE_SUPABASE
         ? await loadTaxonomyDataFromSupabase(language, localization)
         : await loadTaxonomyData(language, localization);
 
-      console.log('[DataProvider] Data loaded successfully:', {
+      console.log('[DataProvider] Tier 1 loaded:', {
         occupations: data.occupations.size,
         skills: data.skills.size,
         occupationGroups: data.occupationGroups.size,
         skillGroups: data.skillGroups.size,
         seenRoots: data.seenOccupationRoots.length,
         unseenRoots: data.unseenOccupationRoots.length,
+        relationsAlreadyPresent: data.occupationToSkillRelations.length,
       });
 
-      // Store data in Zustand
-      store.setTaxonomyData(data);
-      store.setDataLoaded(language, localization);
-      store.setIsLoading(false);
-      store.setError(null);
+      const liveStore = useAppStore.getState();
+      liveStore.setTaxonomyData(data);
+      liveStore.setDataLoaded(language, localization);
+      liveStore.setIsLoading(false);
+      liveStore.setError(null);
+
+      // Tier 2 — occupation_skill_relations. Streamed in the background;
+      // detail panels and the network graph show a "loading…" pill until
+      // this resolves. The CSV path already includes relations, so skip.
+      if (USE_SUPABASE && data.occupationToSkillRelations.length === 0) {
+        loadOccupationSkillRelationsFromSupabase(language, localization)
+          .then((relations) => {
+            // Guard against language change during the background fetch.
+            const current = useAppStore.getState();
+            if (
+              current.dataLoadedForLang !== language ||
+              current.dataLoadedForLoc !== localization
+            ) {
+              console.log('[DataProvider] Tier 2 result discarded — language changed');
+              return;
+            }
+            current.setRelations(relations);
+            console.log('[DataProvider] Tier 2 merged into store');
+          })
+          .catch((err) => {
+            console.error('[DataProvider] Tier 2 load failed:', err);
+            // Non-fatal — tier 1 UI is still functional.
+          });
+      }
     } catch (err) {
       console.error('[DataProvider] Failed to load data:', err);
       store.setIsLoading(false);
