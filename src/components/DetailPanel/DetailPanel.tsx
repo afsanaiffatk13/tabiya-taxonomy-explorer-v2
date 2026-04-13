@@ -129,8 +129,8 @@ function DetailPanelComponent({
   // Get type-specific fields
   const skillType = isSkill ? (item as Skill).skillType : null;
 
-  // New local item = code contains "_" (e.g. "1112_1")
-  const isNewLocalItem = item.isLocalized && item.code.includes('_');
+  // Added local item = code contains "_" (e.g. "1112_1", "8322_8")
+  const isAddedItem = item.code.includes('_');
 
   return (
     <div className="space-y-6">
@@ -175,12 +175,12 @@ function DetailPanelComponent({
               {isGroup && (
                 <Tag variant="default">Group</Tag>
               )}
-              {isNewLocalItem && (
+              {isAddedItem && (
                 <Tag variant="localized">
-                  New {isOccupation ? 'Occupation' : 'Skill'}
+                  Added {isOccupation ? 'Occupation' : 'Skill'}
                 </Tag>
               )}
-              {item.isLocalized && !isNewLocalItem && (
+              {item.isLocalized && !isAddedItem && (
                 <Tag variant="localized">
                   Localized
                 </Tag>

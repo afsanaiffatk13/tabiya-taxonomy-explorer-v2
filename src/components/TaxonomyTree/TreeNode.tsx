@@ -125,14 +125,19 @@ function TreeNodeComponent({
           )}
         </button>
 
-        {/* Icon — filled for localized items */}
-        <span className={`flex-shrink-0 ${node.isLocalized ? 'text-orange-500' : 'text-green-3'}`}>
-          {node.isGroup ? (
-            <Folder className="h-4 w-4" fill={node.isLocalized ? 'currentColor' : 'none'} />
-          ) : (
-            <FileText className="h-4 w-4" fill={node.isLocalized ? 'currentColor' : 'none'} />
-          )}
-        </span>
+        {/* Icon — filled for localized/added items */}
+        {(() => {
+          const isMarked = node.isLocalized || node.code.includes('_');
+          return (
+            <span className={`flex-shrink-0 ${isMarked ? 'text-tabiya-green' : 'text-green-3'}`}>
+              {node.isGroup ? (
+                <Folder className="h-4 w-4" fill={isMarked ? '#002147' : 'none'} />
+              ) : (
+                <FileText className="h-4 w-4" fill={isMarked ? '#002147' : 'none'} />
+              )}
+            </span>
+          );
+        })()}
 
         {/* Label */}
         <span className="min-w-0 flex-1 truncate text-base">
